@@ -1,0 +1,43 @@
+# ============================================================
+# Dados brutos e processados NUNCA vao para o Git (regra 2.2).
+# O que garante reprodutibilidade e o data/manifesto.json.
+# ============================================================
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/manifesto.json
+!data/nomes_pendentes.csv
+
+# Segredos
+.env
+*.key
+
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Saidas grandes de relatorio (imagens ficam, dados nao)
+*.parquet
+*.csv.gz
+
+# Sistema operacional
+Thumbs.db
+.DS_Store
+
+# Editores
+.vscode/
+.idea/
