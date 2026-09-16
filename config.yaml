@@ -18,7 +18,7 @@ seed: 42
 # ----------------------------------------------------------------------------
 ligas:
   # Camada ativa. Troque aqui para ampliar o escopo.
-  ativa: camada_aprendizado
+  ativa: camada_tudo
 
   camadas:
     # Rapido de rodar, para estudar e validar o pipeline inteiro.

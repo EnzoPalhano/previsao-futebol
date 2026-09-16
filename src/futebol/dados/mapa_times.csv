@@ -1,29 +1,1026 @@
 pais,nome_fonte,nome_padrao
+ARG,Aldosivi,Aldosivi
+ARG,All Boys,All Boys
+ARG,Argentinos Jrs,Argentinos Jrs
+ARG,Arsenal Sarandi,Arsenal Sarandi
+ARG,Atl. Rafaela,Atl. Rafaela
+ARG,Atl. Tucuman,Atl. Tucuman
+ARG,Banfield,Banfield
+ARG,Barracas Central,Barracas Central
+ARG,Belgrano,Belgrano
+ARG,Boca Juniors,Boca Juniors
+ARG,Central Cordoba,Central Cordoba
+ARG,Chacarita Juniors,Chacarita Juniors
+ARG,Colon Santa FE,Colon Santa Fe
+ARG,Colon Santa Fe,Colon Santa Fe
+ARG,Crucero del Norte,Crucero del Norte
+ARG,Defensa y Justicia,Defensa y Justicia
+ARG,Dep. Riestra,Dep. Riestra
+ARG,Estudiantes L.P.,Estudiantes L.P.
+ARG,Estudiantes Rio Cuarto,Estudiantes Rio Cuarto
+ARG,Gimnasia L.P.,Gimnasia L.P.
+ARG,Gimnasia Mendoza,Gimnasia Mendoza
+ARG,Godoy Cruz,Godoy Cruz
+ARG,Huracan,Huracan
+ARG,Ind. Rivadavia,Ind. Rivadavia
+ARG,Independiente,Independiente
+ARG,Instituto,Instituto
+ARG,Lanus,Lanus
+ARG,Newells Old Boys,Newells Old Boys
+ARG,Nueva Chicago,Nueva Chicago
+ARG,Olimpo Bahia Blanca,Olimpo Bahia Blanca
+ARG,Patronato,Patronato
+ARG,Platense,Platense
+ARG,Quilmes,Quilmes
+ARG,Racing Club,Racing Club
+ARG,River Plate,River Plate
+ARG,Rosario Central,Rosario Central
+ARG,San Lorenzo,San Lorenzo
+ARG,San Martin S.J.,San Martin S.J.
+ARG,San Martin T.,San Martin T.
+ARG,Sarmiento Junin,Sarmiento Junin
+ARG,Talleres Cordoba,Talleres Cordoba
+ARG,Temperley,Temperley
+ARG,Tigre,Tigre
+ARG,Union de Santa Fe,Union de Santa Fe
+ARG,Velez Sarsfield,Velez Sarsfield
+AUT,A. Klagenfurt,A. Klagenfurt
+AUT,A. Lustenau,A. Lustenau
+AUT,Admira,Admira
+AUT,Altach,Altach
+AUT,Austria Vienna,Austria Vienna
+AUT,BW Linz,BW Linz
+AUT,Grazer AK,Grazer AK
+AUT,Grodig,Grodig
+AUT,Hartberg,Hartberg
+AUT,LASK,LASK
+AUT,Mattersburg,Mattersburg
+AUT,Neustadt,Neustadt
+AUT,Ried,Ried
+AUT,SK Rapid,SK Rapid
+AUT,Salzburg,Salzburg
+AUT,St. Polten,St. Polten
+AUT,Sturm Graz,Sturm Graz
+AUT,Tirol,Tirol
+AUT,Wacker Innsbruck,Wacker Innsbruck
+AUT,Wolfsberger AC,Wolfsberger AC
+BEL,Anderlecht,Anderlecht
+BEL,Antwerp,Antwerp
+BEL,Beerschot VA,Beerschot VA
+BEL,Cercle Brugge,Cercle Brugge
+BEL,Charleroi,Charleroi
+BEL,Club Brugge,Club Brugge
+BEL,Dender,Dender
+BEL,Eupen,Eupen
+BEL,Genk,Genk
+BEL,Gent,Gent
+BEL,Kortrijk,Kortrijk
+BEL,Mechelen,Mechelen
+BEL,Mouscron,Mouscron
+BEL,Oostende,Oostende
+BEL,Oud-Heverlee Leuven,Oud-Heverlee Leuven
+BEL,RAAL La Louviere,RAAL La Louviere
+BEL,RWD Molenbeek,RWD Molenbeek
+BEL,Seraing,Seraing
+BEL,St Truiden,St Truiden
+BEL,St. Gilloise,St. Gilloise
+BEL,Standard,Standard
+BEL,Waasland-Beveren,Waasland-Beveren
+BEL,Waregem,Waregem
+BEL,Westerlo,Westerlo
+BRA,America MG,America MG
+BRA,Athletico-PR,Athletico-PR
+BRA,Atletico GO,Atletico GO
+BRA,Atletico-MG,Atletico-MG
+BRA,Avai,Avai
+BRA,Bahia,Bahia
+BRA,Botafogo RJ,Botafogo RJ
+BRA,Bragantino,Bragantino
+BRA,CSA,CSA
+BRA,Ceara,Ceara
+BRA,Chapecoense-SC,Chapecoense-SC
+BRA,Corinthians,Corinthians
+BRA,Coritiba,Coritiba
+BRA,Criciuma,Criciuma
+BRA,Cruzeiro,Cruzeiro
+BRA,Cuiaba,Cuiaba
+BRA,Figueirense,Figueirense
+BRA,Flamengo RJ,Flamengo RJ
+BRA,Fluminense,Fluminense
+BRA,Fortaleza,Fortaleza
+BRA,Goias,Goias
+BRA,Gremio,Gremio
+BRA,Internacional,Internacional
+BRA,Joinville,Joinville
+BRA,Juventude,Juventude
+BRA,Mirassol,Mirassol
+BRA,Nautico,Nautico
+BRA,Palmeiras,Palmeiras
+BRA,Parana,Parana
+BRA,Ponte Preta,Ponte Preta
+BRA,Portuguesa,Portuguesa
+BRA,Remo,Remo
+BRA,Santa Cruz,Santa Cruz
+BRA,Santos,Santos
+BRA,Sao Paulo,Sao Paulo
+BRA,Sport Recife,Sport Recife
+BRA,Vasco,Vasco
+BRA,Vitoria,Vitoria
+CHN,Beijing Guoan,Beijing Guoan
+CHN,Beijing Renhe,Beijing Renhe
+CHN,Cangzhou,Cangzhou
+CHN,Changchun Yatai,Changchun Yatai
+CHN,Chengdu Rongcheng,Chengdu Rongcheng
+CHN,Chongqing Liangjiang Athletic,Chongqing Liangjiang Athletic
+CHN,Chongqing Tonglianglong,Chongqing Tonglianglong
+CHN,Dalian Pro,Dalian Pro
+CHN,Dalian Yifang F.C.,Dalian Pro
+CHN,Dalian Yingbo,Dalian Yingbo
+CHN,Guangzhou City,Guangzhou City
+CHN,Guangzhou R&F,Guangzhou City
+CHN,Guangzhou Evergrande,Guangzhou FC
+CHN,Guangzhou FC,Guangzhou FC
+CHN,Guizhou Zhicheng,Guizhou Zhicheng
+CHN,Hebei,Hebei
+CHN,Henan Songshan Longmen,Henan Songshan Longmen
+CHN,Jiangsu Suning,Jiangsu Suning
+CHN,Liaoning,Liaoning
+CHN,Liaoning Tieren,Liaoning Tieren
+CHN,Meizhou Hakka,Meizhou Hakka
+CHN,Nantong Zhiyun,Nantong Zhiyun
+CHN,Qingdao FC,Qingdao FC
+CHN,Qingdao Hainiu,Qingdao Hainiu
+CHN,Qingdao West Coast,Qingdao West Coast
+CHN,Shandong Luneng,Shandong Taishan
+CHN,Shandong Taishan,Shandong Taishan
+CHN,Shanghai Port,Shanghai Port
+CHN,Shanghai SIPG,Shanghai Port
+CHN,Shanghai Shenhua,Shanghai Shenhua
+CHN,Shanghai Shenxin,Shanghai Shenxin
+CHN,Shenzhen,Shenzhen
+CHN,Shenzhen Xinpengcheng,Shenzhen Xinpengcheng
+CHN,Shijiazhuang,Shijiazhuang
+CHN,Tianjin Jinmen Tiger,Tianjin Jinmen Tiger
+CHN,Tianjin Quanjian,Tianjin Tianhai
+CHN,Tianjin Tianhai,Tianjin Tianhai
+CHN,Wuhan FC,Wuhan FC
+CHN,Wuhan Three Towns,Wuhan Three Towns
+CHN,Yanbian,Yanbian
+CHN,Yunnan Yukun,Yunnan Yukun
+CHN,Hangzhou Greentown,Zhejiang Professional
+CHN,Zhejiang Greentown,Zhejiang Professional
+CHN,Zhejiang Professional,Zhejiang Professional
+CHN,Zhejiang Yiteng,Zhejiang Yiteng
+DNK,Aalborg,Aalborg
+DNK,Aarhus,Aarhus
+DNK,Brondby,Brondby
+DNK,Esbjerg,Esbjerg
+DNK,FC Copenhagen,FC Copenhagen
+DNK,Fredericia,Fredericia
+DNK,Helsingor,Helsingor
+DNK,Hobro,Hobro
+DNK,Horsens,Horsens
+DNK,Hvidovre IF,Hvidovre IF
+DNK,Lyngby,Lyngby
+DNK,Midtjylland,Midtjylland
+DNK,Nordsjaelland,Nordsjaelland
+DNK,Odense,Odense
+DNK,Randers FC,Randers FC
+DNK,Silkeborg,Silkeborg
+DNK,Sonderjyske,Sonderjyske
+DNK,Vejle,Vejle
+DNK,Vendsyssel,Vendsyssel
+DNK,Vestsjaelland,Vestsjaelland
+DNK,Viborg,Viborg
+ENG,AFC Wimbledon,AFC Wimbledon
+ENG,Accrington,Accrington
+ENG,Aldershot,Aldershot
+ENG,Altrincham,Altrincham
 ENG,Arsenal,Arsenal
 ENG,Aston Villa,Aston Villa
+ENG,Barnet,Barnet
+ENG,Barnsley,Barnsley
+ENG,Barrow,Barrow
+ENG,Birmingham,Birmingham
+ENG,Blackburn,Blackburn
+ENG,Blackpool,Blackpool
+ENG,Bolton,Bolton
+ENG,Boreham Wood,Boreham Wood
+ENG,Boston Utd,Boston Utd
 ENG,Bournemouth,Bournemouth
+ENG,Brackley Town,Brackley Town
+ENG,Bradford,Bradford
+ENG,Braintree Town,Braintree Town
 ENG,Brentford,Brentford
 ENG,Brighton,Brighton
+ENG,Bristol City,Bristol City
+ENG,Bristol Rvs,Bristol Rvs
+ENG,Bromley,Bromley
 ENG,Burnley,Burnley
+ENG,Burton,Burton
+ENG,Cambridge,Cambridge
+ENG,Cardiff,Cardiff
+ENG,Carlisle,Carlisle
+ENG,Charlton,Charlton
 ENG,Chelsea,Chelsea
+ENG,Cheltenham,Cheltenham
+ENG,Chesterfield,Chesterfield
+ENG,Chorley,Chorley
+ENG,Colchester,Colchester
+ENG,Coventry,Coventry
+ENG,Crawley Town,Crawley Town
+ENG,Crewe,Crewe
 ENG,Crystal Palace,Crystal Palace
+ENG,Dag and Red,Dag and Red
+ENG,Derby,Derby
+ENG,Doncaster,Doncaster
+ENG,Dorking,Dorking
+ENG,Dover Athletic,Dover Athletic
+ENG,Eastleigh,Eastleigh
+ENG,Ebbsfleet,Ebbsfleet
 ENG,Everton,Everton
+ENG,Exeter,Exeter
+ENG,Fleetwood Town,Fleetwood Town
+ENG,Forest Green,Forest Green
 ENG,Fulham,Fulham
+ENG,Fylde,Fylde
+ENG,Gateshead,Gateshead
+ENG,Gillingham,Gillingham
+ENG,Grimsby,Grimsby
+ENG,Halifax,Halifax
+ENG,Harrogate,Harrogate
+ENG,Hartlepool,Hartlepool
+ENG,Huddersfield,Huddersfield
+ENG,Hull,Hull
 ENG,Ipswich,Ipswich
+ENG,Kidderminster,Kidderminster
+ENG,Kings Lynn,Kings Lynn
 ENG,Leeds,Leeds
 ENG,Leicester,Leicester
+ENG,Leyton Orient,Leyton Orient
+ENG,Lincoln,Lincoln
 ENG,Liverpool,Liverpool
 ENG,Luton,Luton
+ENG,Macclesfield,Macclesfield
+ENG,Maidenhead,Maidenhead
+ENG,Maidstone,Maidstone
 ENG,Man City,Man City
 ENG,Man United,Man United
+ENG,Mansfield,Mansfield
+ENG,Middlesbrough,Middlesbrough
+ENG,Millwall,Millwall
+ENG,Milton Keynes Dons,Milton Keynes Dons
+ENG,Morecambe,Morecambe
 ENG,Newcastle,Newcastle
+ENG,Newport County,Newport County
+ENG,Northampton,Northampton
 ENG,Norwich,Norwich
 ENG,Nott'm Forest,Nott'm Forest
+ENG,Notts County,Notts County
+ENG,Oldham,Oldham
+ENG,Oxford,Oxford
+ENG,Oxford City,Oxford City
+ENG,Peterboro,Peterboro
+ENG,Plymouth,Plymouth
+ENG,Port Vale,Port Vale
+ENG,Portsmouth,Portsmouth
+ENG,Preston,Preston
+ENG,QPR,QPR
+ENG,Reading,Reading
+ENG,Rochdale,Rochdale
+ENG,Rotherham,Rotherham
+ENG,Salford,Salford
+ENG,Scunthorpe,Scunthorpe
 ENG,Sheffield United,Sheffield United
+ENG,Sheffield Weds,Sheffield Weds
+ENG,Shrewsbury,Shrewsbury
+ENG,Solihull,Solihull
 ENG,Southampton,Southampton
+ENG,Southend,Southend
+ENG,Stevenage,Stevenage
+ENG,Stockport,Stockport
+ENG,Stoke,Stoke
 ENG,Sunderland,Sunderland
+ENG,Sutton,Sutton
+ENG,Swansea,Swansea
+ENG,Swindon,Swindon
+ENG,Tamworth,Tamworth
+ENG,Torquay,Torquay
 ENG,Tottenham,Tottenham
+ENG,Tranmere,Tranmere
+ENG,Truro,Truro
+ENG,Walsall,Walsall
 ENG,Watford,Watford
+ENG,Wealdstone,Wealdstone
 ENG,West Brom,West Brom
 ENG,West Ham,West Ham
+ENG,Weymouth,Weymouth
+ENG,Wigan,Wigan
+ENG,Woking,Woking
 ENG,Wolves,Wolves
+ENG,Wrexham,Wrexham
+ENG,Wycombe,Wycombe
+ENG,Yeovil,Yeovil
+ENG,York,York
+ESP,Alaves,Alaves
+ESP,Albacete,Albacete
+ESP,Alcorcon,Alcorcon
+ESP,Almeria,Almeria
+ESP,Amorebieta,Amorebieta
+ESP,Andorra,Andorra
+ESP,Ath Bilbao,Ath Bilbao
+ESP,Ath Madrid,Ath Madrid
+ESP,Barcelona,Barcelona
+ESP,Betis,Betis
+ESP,Burgos,Burgos
+ESP,Cadiz,Cadiz
+ESP,Cartagena,Cartagena
+ESP,Castellon,Castellon
+ESP,Celta,Celta
+ESP,Ceuta,Ceuta
+ESP,Cordoba,Cordoba
+ESP,Cultural Leonesa,Cultural Leonesa
+ESP,Eibar,Eibar
+ESP,Elche,Elche
+ESP,Eldense,Eldense
+ESP,Espanol,Espanol
+ESP,Extremadura UD,Extremadura UD
+ESP,Ferrol,Ferrol
+ESP,Fuenlabrada,Fuenlabrada
+ESP,Getafe,Getafe
+ESP,Girona,Girona
+ESP,Granada,Granada
+ESP,Huesca,Huesca
+ESP,Ibiza,Ibiza
+ESP,La Coruna,La Coruna
+ESP,Las Palmas,Las Palmas
+ESP,Leganes,Leganes
+ESP,Levante,Levante
+ESP,Logrones,Logrones
+ESP,Lugo,Lugo
+ESP,Malaga,Malaga
+ESP,Mallorca,Mallorca
+ESP,Mirandes,Mirandes
+ESP,Numancia,Numancia
+ESP,Osasuna,Osasuna
+ESP,Oviedo,Oviedo
+ESP,Ponferradina,Ponferradina
+ESP,Real Madrid,Real Madrid
+ESP,Sabadell,Sabadell
+ESP,Santander,Santander
+ESP,Sevilla,Sevilla
+ESP,Sociedad,Sociedad
+ESP,Sociedad B,Sociedad B
+ESP,Sp Gijon,Sp Gijon
+ESP,Tenerife,Tenerife
+ESP,Valencia,Valencia
+ESP,Valladolid,Valladolid
+ESP,Vallecano,Vallecano
+ESP,Villarreal,Villarreal
+ESP,Villarreal B,Villarreal B
+ESP,Zaragoza,Zaragoza
+FIN,AC Oulu,AC Oulu
+FIN,Ekenas,Ekenas
+FIN,Gnistan,Gnistan
+FIN,HIFK,HIFK
+FIN,HJK,HJK
+FIN,Haka,Haka
+FIN,Honka,Honka
+FIN,Ilves,Ilves
+FIN,Inter Turku,Inter Turku
+FIN,JJK Jyvaskyla,JJK Jyvaskyla
+FIN,Jaro,Jaro
+FIN,KPV Kokkola,KPV Kokkola
+FIN,KTP,KTP
+FIN,KuPS,KuPS
+FIN,Lahti,Lahti
+FIN,Mariehamn,Mariehamn
+FIN,MyPa,MyPa
+FIN,PK-35 Vantaa,PK-35 Vantaa
+FIN,PS Kemi,PS Kemi
+FIN,Rovaniemi,Rovaniemi
+FIN,SJK,SJK
+FIN,TPS,TPS
+FIN,VPS,VPS
+FRA,Ajaccio,Ajaccio
+FRA,Amiens,Amiens
+FRA,Angers,Angers
+FRA,Annecy,Annecy
+FRA,Auxerre,Auxerre
+FRA,Bastia,Bastia
+FRA,Bordeaux,Bordeaux
+FRA,Boulogne,Boulogne
+FRA,Brest,Brest
+FRA,Caen,Caen
+FRA,Chambly,Chambly
+FRA,Chateauroux,Chateauroux
+FRA,Clermont,Clermont
+FRA,Concarneau,Concarneau
+FRA,Dijon,Dijon
+FRA,Dunkerque,Dunkerque
+FRA,Grenoble,Grenoble
+FRA,Guingamp,Guingamp
+FRA,Laval,Laval
+FRA,Le Havre,Le Havre
+FRA,Le Mans,Le Mans
+FRA,Lens,Lens
+FRA,Lille,Lille
+FRA,Lorient,Lorient
+FRA,Lyon,Lyon
+FRA,Marseille,Marseille
+FRA,Martigues,Martigues
+FRA,Metz,Metz
+FRA,Monaco,Monaco
+FRA,Montpellier,Montpellier
+FRA,Nancy,Nancy
+FRA,Nantes,Nantes
+FRA,Nice,Nice
+FRA,Nimes,Nimes
+FRA,Niort,Niort
+FRA,Orleans,Orleans
+FRA,Paris FC,Paris FC
+FRA,Paris SG,Paris SG
+FRA,Pau FC,Pau FC
+FRA,Quevilly Rouen,Quevilly Rouen
+FRA,Red Star,Red Star
+FRA,Reims,Reims
+FRA,Rennes,Rennes
+FRA,Rodez,Rodez
+FRA,Sochaux,Sochaux
+FRA,St Etienne,St Etienne
+FRA,Strasbourg,Strasbourg
+FRA,Toulouse,Toulouse
+FRA,Troyes,Troyes
+FRA,Valenciennes,Valenciennes
+GER,Augsburg,Augsburg
+GER,Bayern Munich,Bayern Munich
+GER,Bielefeld,Bielefeld
+GER,Bochum,Bochum
+GER,Braunschweig,Braunschweig
+GER,Darmstadt,Darmstadt
+GER,Dortmund,Dortmund
+GER,Dresden,Dresden
+GER,Ein Frankfurt,Ein Frankfurt
+GER,Elversberg,Elversberg
+GER,Erzgebirge Aue,Erzgebirge Aue
+GER,FC Koln,FC Koln
+GER,Fortuna Dusseldorf,Fortuna Dusseldorf
+GER,Freiburg,Freiburg
+GER,Greuther Furth,Greuther Furth
+GER,Hamburg,Hamburg
+GER,Hannover,Hannover
+GER,Hansa Rostock,Hansa Rostock
+GER,Heidenheim,Heidenheim
+GER,Hertha,Hertha
+GER,Hoffenheim,Hoffenheim
+GER,Holstein Kiel,Holstein Kiel
+GER,Ingolstadt,Ingolstadt
+GER,Kaiserslautern,Kaiserslautern
+GER,Karlsruhe,Karlsruhe
+GER,Leverkusen,Leverkusen
+GER,M'gladbach,M'gladbach
+GER,Magdeburg,Magdeburg
+GER,Mainz,Mainz
+GER,Nurnberg,Nurnberg
+GER,Osnabruck,Osnabruck
+GER,Paderborn,Paderborn
+GER,Preußen Münster,Preußen Münster
+GER,RB Leipzig,RB Leipzig
+GER,Regensburg,Regensburg
+GER,Sandhausen,Sandhausen
+GER,Schalke 04,Schalke 04
+GER,St Pauli,St Pauli
+GER,Stuttgart,Stuttgart
+GER,Ulm,Ulm
+GER,Union Berlin,Union Berlin
+GER,Wehen,Wehen
+GER,Werder Bremen,Werder Bremen
+GER,Wolfsburg,Wolfsburg
+GER,Wurzburger Kickers,Wurzburger Kickers
+GRE,AEK,AEK
+GRE,Apollon,Apollon
+GRE,Aris,Aris
+GRE,Asteras Tripolis,Asteras Tripolis
+GRE,Athens Kallithea,Athens Kallithea
+GRE,Atromitos,Atromitos
+GRE,Giannina,Giannina
+GRE,Ionikos,Ionikos
+GRE,Kifisia,Kifisia
+GRE,Lamia,Lamia
+GRE,Larisa,Larisa
+GRE,Levadeiakos,Levadeiakos
+GRE,OFI Crete,OFI Crete
+GRE,Olympiakos,Olympiakos
+GRE,PAOK,PAOK
+GRE,Panathinaikos,Panathinaikos
+GRE,Panetolikos,Panetolikos
+GRE,Panionios,Panionios
+GRE,Panserraikos,Panserraikos
+GRE,Volos NFC,Volos NFC
+GRE,Xanthi,Xanthi
+IRL,Athlone,Athlone
+IRL,Bohemians,Bohemians
+IRL,Bray,Bray
+IRL,Cabinteely,Cabinteely
+IRL,Cobh Ramblers,Cobh Ramblers
+IRL,Cork City,Cork City
+IRL,Derry City,Derry City
+IRL,Drogheda,Drogheda
+IRL,Dundalk,Dundalk
+IRL,Finn Harps,Finn Harps
+IRL,Galway,Galway
+IRL,Limerick,Limerick
+IRL,Longford,Longford
+IRL,Mervue,Mervue
+IRL,Monaghan,Monaghan
+IRL,Shamrock Rovers,Shamrock Rovers
+IRL,Shelbourne,Shelbourne
+IRL,Sligo Rovers,Sligo Rovers
+IRL,St. Patricks,St. Patricks
+IRL,Treaty United,Treaty United
+IRL,UC Dublin,UC Dublin
+IRL,Waterford,Waterford
+IRL,Wexford,Wexford
+ITA,Alessandria,Alessandria
+ITA,Ascoli,Ascoli
+ITA,Atalanta,Atalanta
+ITA,Avellino,Avellino
+ITA,Bari,Bari
+ITA,Benevento,Benevento
+ITA,Bologna,Bologna
+ITA,Brescia,Brescia
+ITA,Cagliari,Cagliari
+ITA,Carrarese,Carrarese
+ITA,Catanzaro,Catanzaro
+ITA,Cesena,Cesena
+ITA,Chievo,Chievo
+ITA,Cittadella,Cittadella
+ITA,Como,Como
+ITA,Cosenza,Cosenza
+ITA,Cremonese,Cremonese
+ITA,Crotone,Crotone
+ITA,Empoli,Empoli
+ITA,FeralpiSalo,FeralpiSalo
+ITA,Fiorentina,Fiorentina
+ITA,Frosinone,Frosinone
+ITA,Genoa,Genoa
+ITA,Inter,Inter
+ITA,Juve Stabia,Juve Stabia
+ITA,Juventus,Juventus
+ITA,Lazio,Lazio
+ITA,Lecce,Lecce
+ITA,Lecco,Lecco
+ITA,Livorno,Livorno
+ITA,Mantova,Mantova
+ITA,Milan,Milan
+ITA,Modena,Modena
+ITA,Monza,Monza
+ITA,Napoli,Napoli
+ITA,Padova,Padova
+ITA,Palermo,Palermo
+ITA,Parma,Parma
+ITA,Perugia,Perugia
+ITA,Pescara,Pescara
+ITA,Pisa,Pisa
+ITA,Pordenone,Pordenone
+ITA,Reggiana,Reggiana
+ITA,Reggina,Reggina
+ITA,Roma,Roma
+ITA,Salernitana,Salernitana
+ITA,Sampdoria,Sampdoria
+ITA,Sassuolo,Sassuolo
+ITA,Spal,Spal
+ITA,Spezia,Spezia
+ITA,Sudtirol,Sudtirol
+ITA,Ternana,Ternana
+ITA,Torino,Torino
+ITA,Trapani,Trapani
+ITA,Udinese,Udinese
+ITA,Venezia,Venezia
+ITA,Verona,Verona
+ITA,Vicenza,Vicenza
+ITA,Virtus Entella,Virtus Entella
+JPN,Albirex Niigata,Albirex Niigata
+JPN,Avispa Fukuoka,Avispa Fukuoka
+JPN,Cerezo Osaka,Cerezo Osaka
+JPN,Chiba,Chiba
+JPN,FC Tokyo,FC Tokyo
+JPN,Gamba Osaka,Gamba Osaka
+JPN,Hokkaido Consadole Sapporo,Hokkaido Consadole Sapporo
+JPN,Iwata,Iwata
+JPN,Kashima Antlers,Kashima Antlers
+JPN,Kashiwa Reysol,Kashiwa Reysol
+JPN,Kawasaki Frontale,Kawasaki Frontale
+JPN,Kofu,Kofu
+JPN,Kumamoto,Kumamoto
+JPN,Kyoto,Kyoto
+JPN,Machida,Machida
+JPN,Mito,Mito
+JPN,Montedio Yamagata,Montedio Yamagata
+JPN,Nagoya Grampus,Nagoya Grampus
+JPN,Oita Trinita,Oita Trinita
+JPN,Okayama,Okayama
+JPN,Omiya Ardija,Omiya Ardija
+JPN,Sagan Tosu,Sagan Tosu
+JPN,Sanfrecce Hiroshima,Sanfrecce Hiroshima
+JPN,Shimizu S-Pulse,Shimizu S-Pulse
+JPN,Shonan Bellmare,Shonan Bellmare
+JPN,Tokushima,Tokushima
+JPN,Urawa Reds,Urawa Reds
+JPN,V-Varen Nagasaki,V-Varen Nagasaki
+JPN,Vegalta Sendai,Vegalta Sendai
+JPN,Verdy,Verdy
+JPN,Vissel Kobe,Vissel Kobe
+JPN,Yamaga,Yamaga
+JPN,Yokohama F. Marinos,Yokohama F. Marinos
+JPN,Yokohama FC,Yokohama FC
+MEX,Atl. San Luis,Atl. San Luis
+MEX,Atlante,Atlante
+MEX,Atlas,Atlas
+MEX,Chiapas,Chiapas
+MEX,Club America,Club America
+MEX,Club Leon,Club Leon
+MEX,Club Tijuana,Club Tijuana
+MEX,Cruz Azul,Cruz Azul
+MEX,Dorados de Sinaloa,Dorados de Sinaloa
+MEX,Guadalajara Chivas,Guadalajara Chivas
+MEX,Juarez,Juarez
+MEX,Leones Negros,Leones Negros
+MEX,Lobos BUAP,Lobos BUAP
+MEX,Mazatlan FC,Mazatlan FC
+MEX,Monarcas,Monarcas
+MEX,Monterrey,Monterrey
+MEX,Necaxa,Necaxa
+MEX,Pachuca,Pachuca
+MEX,Puebla,Puebla
+MEX,Queretaro,Queretaro
+MEX,Santos Laguna,Santos Laguna
+MEX,Tigres UANL,Tigres UANL
+MEX,Toluca,Toluca
+MEX,UNAM Pumas,UNAM Pumas
+MEX,Veracruz,Veracruz
+NED,AZ Alkmaar,AZ Alkmaar
+NED,Ajax,Ajax
+NED,Almere City,Almere City
+NED,Cambuur,Cambuur
+NED,Den Haag,Den Haag
+NED,Excelsior,Excelsior
+NED,FC Emmen,FC Emmen
+NED,Feyenoord,Feyenoord
+NED,For Sittard,For Sittard
+NED,Go Ahead Eagles,Go Ahead Eagles
+NED,Groningen,Groningen
+NED,Heerenveen,Heerenveen
+NED,Heracles,Heracles
+NED,NAC Breda,NAC Breda
+NED,Nijmegen,Nijmegen
+NED,PSV Eindhoven,PSV Eindhoven
+NED,Sparta Rotterdam,Sparta Rotterdam
+NED,Telstar,Telstar
+NED,Twente,Twente
+NED,Utrecht,Utrecht
+NED,VVV Venlo,VVV Venlo
+NED,Vitesse,Vitesse
+NED,Volendam,Volendam
+NED,Waalwijk,Waalwijk
+NED,Willem II,Willem II
+NED,Zwolle,Zwolle
+NOR,Aalesund,Aalesund
+NOR,Bodo/Glimt,Bodo/Glimt
+NOR,Brann,Brann
+NOR,Bryne,Bryne
+NOR,Fredrikstad,Fredrikstad
+NOR,Ham-Kam,HamKam
+NOR,HamKam,HamKam
+NOR,Haugesund,Haugesund
+NOR,Honefoss,Honefoss
+NOR,Jerv,Jerv
+NOR,KFUM Oslo,KFUM Oslo
+NOR,Kongsvinger,Kongsvinger
+NOR,Kristiansund,Kristiansund
+NOR,Lillestrom,Lillestrom
+NOR,Mjondalen,Mjondalen
+NOR,Molde,Molde
+NOR,Moss,Moss
+NOR,Odd,Odd
+NOR,Ranheim,Ranheim
+NOR,Rosenborg,Rosenborg
+NOR,Sandefjord,Sandefjord
+NOR,Sandnes,Sandnes
+NOR,Sarpsborg 08,Sarpsborg 08
+NOR,Sogndal,Sogndal
+NOR,Stabaek,Stabaek
+NOR,Start,Start
+NOR,Stromsgodset,Stromsgodset
+NOR,Tromso,Tromso
+NOR,Ull/Kisa,Ull/Kisa
+NOR,Valerenga,Valerenga
+NOR,Viking,Viking
+POL,Arka Gdynia,Arka Gdynia
+POL,Cracovia,Cracovia
+POL,GKS Belchatow,GKS Belchatow
+POL,GKS Katowice,GKS Katowice
+POL,Gornik Z.,Gornik Z.
+POL,Gornik Zabrze,Gornik Zabrze
+POL,Jagiellonia,Jagiellonia
+POL,Korona Kielce,Korona Kielce
+POL,LKS Lodz,LKS Lodz
+POL,Lech Poznan,Lech Poznan
+POL,Lechia Gdansk,Lechia Gdansk
+POL,Leczna,Leczna
+POL,Legia,Legia
+POL,Legnica,Legnica
+POL,Motor Lublin,Motor Lublin
+POL,Piast Gliwice,Piast Gliwice
+POL,Podbeskidzie,Podbeskidzie
+POL,Pogon Szczecin,Pogon Szczecin
+POL,Polonia Warszawa,Polonia Warszawa
+POL,Puszcza,Puszcza
+POL,Radomiak Radom,Radomiak Radom
+POL,Rakow,Rakow
+POL,Ruch,Ruch
+POL,Ruch Chorzow,Ruch Chorzow
+POL,Sandecja Nowy S.,Sandecja Nowy S.
+POL,Slask Wroclaw,Slask Wroclaw
+POL,Stal Mielec,Stal Mielec
+POL,Termalica B-B.,Termalica B-B.
+POL,Warta Poznan,Warta Poznan
+POL,Widzew Lodz,Widzew Lodz
+POL,Wieczysta Krakow,Wieczysta Krakow
+POL,Wisla,Wisla
+POL,Wisla Plock,Wisla Plock
+POL,Zaglebie,Zaglebie
+POL,Zaglebie Sosnowiec,Zaglebie Sosnowiec
+POL,Zawisza,Zawisza
+POR,AVS,AVS
+POR,Alverca,Alverca
+POR,Arouca,Arouca
+POR,Aves,Aves
+POR,Belenenses,Belenenses
+POR,Benfica,Benfica
+POR,Boavista,Boavista
+POR,Casa Pia,Casa Pia
+POR,Chaves,Chaves
+POR,Estoril,Estoril
+POR,Estrela,Estrela
+POR,Famalicao,Famalicao
+POR,Farense,Farense
+POR,Gil Vicente,Gil Vicente
+POR,Guimaraes,Guimaraes
+POR,Maritimo,Maritimo
+POR,Moreirense,Moreirense
+POR,Nacional,Nacional
+POR,Pacos Ferreira,Pacos Ferreira
+POR,Portimonense,Portimonense
+POR,Porto,Porto
+POR,Rio Ave,Rio Ave
+POR,Santa Clara,Santa Clara
+POR,Setubal,Setubal
+POR,Sp Braga,Sp Braga
+POR,Sp Lisbon,Sp Lisbon
+POR,Tondela,Tondela
+POR,Vizela,Vizela
+ROU,Academica Clinceni,Academica Clinceni
+ROU,Astra,Astra
+ROU,Bistrita,Bistrita
+ROU,CFR Cluj,CFR Cluj
+ROU,CS Turnu Severin,CS Turnu Severin
+ROU,Calarasi,Calarasi
+ROU,Ceahlaul,Ceahlaul
+ROU,Chindia Targoviste,Chindia Targoviste
+ROU,Concordia,Concordia
+ROU,Corona Brasov,Corona Brasov
+ROU,Corvinul,Corvinul
+ROU,Csikszereda M. Ciuc,Csikszereda M. Ciuc
+ROU,Daco-Getica Bucuresti,Daco-Getica Bucuresti
+ROU,Din. Bucuresti,Dinamo Bucuresti
+ROU,Dinamo Bucuresti,Dinamo Bucuresti
+ROU,FC Arges,FC Arges
+ROU,FC Botosani,FC Botosani
+ROU,FC Brasov,FC Brasov
+ROU,FC Hermannstadt,FC Hermannstadt
+ROU,FC Rapid Bucuresti,FC Rapid Bucuresti
+ROU,FC Voluntari,FC Voluntari
+ROU,FCSB,FCSB
+ROU,Farul Constanta,Farul Constanta
+ROU,Gaz Metan Medias,Gaz Metan Medias
+ROU,Gloria Buzau,Gloria Buzau
+ROU,Metaloglobus Bucharest,Metaloglobus Bucharest
+ROU,Mioveni,Mioveni
+ROU,Navodari,Navodari
+ROU,Otelul,Otelul
+ROU,Pandurii,Pandurii
+ROU,Petrolul,Petrolul
+ROU,Poli Iasi,Poli Iasi
+ROU,Poli Timisoara,Poli Timisoara
+ROU,Sepsi Sf. Gheorghe,Sepsi Sf. Gheorghe
+ROU,Targu Mures,Targu Mures
+ROU,U Craiova 1948,U Craiova 1948
+ROU,U. Cluj,U. Cluj
+ROU,UTA Arad,UTA Arad
+ROU,Unirea Slobozia,Unirea Slobozia
+ROU,U Craiova,Univ. Craiova
+ROU,Univ. Craiova,Univ. Craiova
+ROU,Vaslui,Vaslui
+ROU,Viitorul Constanta,Viitorul Constanta
+RUS,Akhmat Grozny,Akhmat Grozny
+RUS,Akron Togliatti,Akron Togliatti
+RUS,Amkar,Amkar
+RUS,Arsenal Tula,Arsenal Tula
+RUS,Baltika,Baltika
+RUS,CSKA Moscow,CSKA Moscow
+RUS,Dynamo Makhachkala,Dynamo Makhachkala
+RUS,Dynamo Moscow,Dynamo Moscow
+RUS,FK Anzi Makhackala,FK Anzi Makhackala
+RUS,FK Rostov,FK Rostov
+RUS,Fakel Voronezh,Fakel Voronezh
+RUS,Khimki,Khimki
+RUS,Krasnodar,Krasnodar
+RUS,Krylya Sovetov,Krylya Sovetov
+RUS,Kuban,Kuban
+RUS,Lokomotiv Moscow,Lokomotiv Moscow
+RUS,M. Saransk,M. Saransk
+RUS,Orenburg,Orenburg
+RUS,Pari NN,Pari NN
+RUS,R. Volgograd,R. Volgograd
+RUS,Rodina Moscow,Rodina Moscow
+RUS,Rubin Kazan,Rubin Kazan
+RUS,SKA Khabarovsk,SKA Khabarovsk
+RUS,Sochi,Sochi
+RUS,Spartak Moscow,Spartak Moscow
+RUS,Spartak Nalchik,Spartak Nalchik
+RUS,T. Moscow,T. Moscow
+RUS,Tambov,Tambov
+RUS,Tomsk,Tomsk
+RUS,Torpedo Moscow,Torpedo Moscow
+RUS,Tosno,Tosno
+RUS,Ufa,Ufa
+RUS,Ural,Ural
+RUS,Vladikavkaz,Vladikavkaz
+RUS,Volga N. Novgorod,Volga N. Novgorod
+RUS,Volgar-Astrakhan,Volgar-Astrakhan
+RUS,Yenisey,Yenisey
+RUS,Zenit,Zenit
+SCO,Aberdeen,Aberdeen
+SCO,Airdrie Utd,Airdrie Utd
+SCO,Albion Rvs,Albion Rvs
+SCO,Alloa,Alloa
+SCO,Annan Athletic,Annan Athletic
+SCO,Arbroath,Arbroath
+SCO,Ayr,Ayr
+SCO,Bonnyrigg Rose,Bonnyrigg Rose
+SCO,Brechin,Brechin
+SCO,Celtic,Celtic
+SCO,Clyde,Clyde
+SCO,Cove Rangers,Cove Rangers
+SCO,Cowdenbeath,Cowdenbeath
+SCO,Dumbarton,Dumbarton
+SCO,Dundee,Dundee
+SCO,Dundee United,Dundee United
+SCO,Dunfermline,Dunfermline
+SCO,East Fife,East Fife
+SCO,East Kilbride,East Kilbride
+SCO,Edinburgh City,Edinburgh City
+SCO,FC Edinburgh,Edinburgh City
+SCO,Elgin,Elgin
+SCO,Falkirk,Falkirk
+SCO,Forfar,Forfar
+SCO,Hamilton,Hamilton
+SCO,Hearts,Hearts
+SCO,Hibernian,Hibernian
+SCO,Inverness C,Inverness C
+SCO,Kelty Hearts,Kelty Hearts
+SCO,Kilmarnock,Kilmarnock
+SCO,Livingston,Livingston
+SCO,Montrose,Montrose
+SCO,Morton,Morton
+SCO,Motherwell,Motherwell
+SCO,Partick,Partick
+SCO,Peterhead,Peterhead
+SCO,Queen of Sth,Queen of Sth
+SCO,Queens Park,Queens Park
+SCO,Raith Rvs,Raith Rvs
+SCO,Rangers,Rangers
+SCO,Ross County,Ross County
+SCO,Spartans,Spartans
+SCO,St Johnstone,St Johnstone
+SCO,St Mirren,St Mirren
+SCO,Stenhousemuir,Stenhousemuir
+SCO,Stirling,Stirling
+SCO,Stranraer,Stranraer
+SWE,AFC Eskilstuna,AFC Eskilstuna
+SWE,AIK,AIK
+SWE,Atvidabergs,Atvidabergs
+SWE,Brage,Brage
+SWE,Brommapojkarna,Brommapojkarna
+SWE,Dalkurd,Dalkurd
+SWE,Degerfors,Degerfors
+SWE,Djurgarden,Djurgarden
+SWE,Elfsborg,Elfsborg
+SWE,Falkenbergs,Falkenbergs
+SWE,GAIS,GAIS
+SWE,Gefle,Gefle
+SWE,Goteborg,Goteborg
+SWE,Hacken,Hacken
+SWE,Halmstad,Halmstad
+SWE,Hammarby,Hammarby
+SWE,Helsingborg,Helsingborg
+SWE,Jonkopings,Jonkopings
+SWE,Kalmar,Kalmar
+SWE,Landskrona,Landskrona
+SWE,Ljungskile,Ljungskile
+SWE,Malmo FF,Malmo FF
+SWE,Mjallby,Mjallby
+SWE,Norrkoping,Norrkoping
+SWE,Orebro,Orebro
+SWE,Orgryte,Orgryte
+SWE,Oster,Osters
+SWE,Osters,Osters
+SWE,Ostersunds,Ostersunds
+SWE,Sirius,Sirius
+SWE,Sundsvall,Sundsvall
+SWE,Syrianska,Syrianska
+SWE,Trelleborgs,Trelleborgs
+SWE,Varberg,Varberg
+SWE,Varnamo,Varnamo
+SWE,Vasteras SK,Vasteras SK
+SWZ,Aarau,Aarau
+SWZ,Basel,Basel
+SWZ,Grasshoppers,Grasshoppers
+SWZ,Lausanne,Lausanne
+SWZ,Lausanne Ouchy,Lausanne Ouchy
+SWZ,Lugano,Lugano
+SWZ,Luzern,Luzern
+SWZ,Schaffhausen,Schaffhausen
+SWZ,Servette,Servette
+SWZ,Sion,Sion
+SWZ,St. Gallen,St. Gallen
+SWZ,Thun,Thun
+SWZ,Vaduz,Vaduz
+SWZ,Winterthur,Winterthur
+SWZ,Xamax,Xamax
+SWZ,Young Boys,Young Boys
+SWZ,Yverdon,Yverdon
+SWZ,Zurich,Zurich
+TUR,Ad. Demirspor,Ad. Demirspor
+TUR,Alanyaspor,Alanyaspor
+TUR,Altay,Altay
+TUR,Ankaragucu,Ankaragucu
+TUR,Antalyaspor,Antalyaspor
+TUR,Besiktas,Besiktas
+TUR,Bodrumspor,Bodrumspor
+TUR,Buyuksehyr,Buyuksehyr
+TUR,Denizlispor,Denizlispor
+TUR,Erzurum BB,Erzurum BB
+TUR,Eyupspor,Eyupspor
+TUR,Fenerbahce,Fenerbahce
+TUR,Galatasaray,Galatasaray
+TUR,Gaziantep,Gaziantep
+TUR,Genclerbirligi,Genclerbirligi
+TUR,Giresunspor,Giresunspor
+TUR,Goztep,Goztep
+TUR,Hatayspor,Hatayspor
+TUR,Istanbulspor,Istanbulspor
+TUR,Karagumruk,Karagumruk
+TUR,Kasimpasa,Kasimpasa
+TUR,Kayserispor,Kayserispor
+TUR,Kocaelispor,Kocaelispor
+TUR,Konyaspor,Konyaspor
+TUR,Pendikspor,Pendikspor
+TUR,Rizespor,Rizespor
+TUR,Samsunspor,Samsunspor
+TUR,Sivasspor,Sivasspor
+TUR,Trabzonspor,Trabzonspor
+TUR,Umraniyespor,Umraniyespor
+TUR,Yeni Malatyaspor,Yeni Malatyaspor
+USA,Atlanta Utd,Atlanta Utd
+USA,Austin FC,Austin FC
+USA,CF Montreal,CF Montreal
+USA,Charlotte,Charlotte
+USA,Chicago Fire,Chicago Fire
+USA,Chivas USA,Chivas USA
+USA,Colorado Rapids,Colorado Rapids
+USA,Columbus Crew,Columbus Crew
+USA,DC United,DC United
+USA,FC Cincinnati,FC Cincinnati
+USA,FC Dallas,FC Dallas
+USA,Houston Dynamo,Houston Dynamo
+USA,Inter Miami,Inter Miami
+USA,Los Angeles FC,Los Angeles FC
+USA,Los Angeles Galaxy,Los Angeles Galaxy
+USA,Minnesota United,Minnesota United
+USA,Nashville SC,Nashville SC
+USA,New England Revolution,New England Revolution
+USA,New York City,New York City
+USA,New York Red Bulls,New York Red Bulls
+USA,Orlando City,Orlando City
+USA,Philadelphia Union,Philadelphia Union
+USA,Portland Timbers,Portland Timbers
+USA,Real Salt Lake,Real Salt Lake
+USA,San Diego FC,San Diego FC
+USA,San Jose Earthquakes,San Jose Earthquakes
+USA,Seattle Sounders,Seattle Sounders
+USA,Sporting Kansas City,Sporting Kansas City
+USA,St. Louis City,St. Louis City
+USA,Toronto FC,Toronto FC
+USA,Vancouver Whitecaps,Vancouver Whitecaps

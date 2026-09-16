@@ -22,6 +22,7 @@ import sys
 
 from futebol.config import Config, carregar_config
 from futebol.dados import download, manifesto
+from futebol.terminal import preparar_saida
 
 
 def conferir(cfg: Config) -> int:
@@ -87,6 +88,8 @@ def baixar(cfg: Config, *, forcar: bool) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Nome de clube estrangeiro derruba o console cp1252 do Windows.
+    preparar_saida()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--forcar",

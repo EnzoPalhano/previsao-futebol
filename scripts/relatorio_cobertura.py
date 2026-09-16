@@ -22,9 +22,12 @@ from datetime import date
 
 from futebol.config import carregar_config
 from futebol.dados import cobertura, limpeza
+from futebol.terminal import preparar_saida
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Nome de clube estrangeiro derruba o console cp1252 do Windows.
+    preparar_saida()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--so-ver",

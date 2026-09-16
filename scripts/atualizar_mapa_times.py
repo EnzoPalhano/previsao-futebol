@@ -21,14 +21,20 @@ import argparse
 import sys
 from pathlib import Path
 
-import pandas as pd
-
 from futebol.config import Config, carregar_config
-from futebol.dados import download, formatos, nomes_times
+from futebol.dados import download, formatos, limpeza, nomes_times
+from futebol.terminal import preparar_saida
 
 
 def pares_dos_arquivos(cfg: Config) -> list[tuple[str, str]]:
-    """Colhe todos os pares ``(codigo_competicao, nome_do_time)`` da camada ativa."""
+    """Colhe todos os pares ``(codigo_competicao, nome_do_time)`` da camada ativa.
+
+    A leitura passa por :func:`futebol.dados.limpeza.ler_bruto` de propósito:
+    ele é o mesmo leitor que monta a tabela de jogos, com a mesma cascata de
+    encoding. Ler aqui com uma regra e lá com outra produziria nomes
+    diferentes para o mesmo time — ``Preußen Münster`` num lado e
+    ``PreuÃen MÃ¼nster`` no outro — e o mapa nunca casaria com os dados.
+    """
     pares: set[tuple[str, str]] = set()
 
     for alvo in download.alvos_da_camada_ativa(cfg):
@@ -40,18 +46,11 @@ def pares_dos_arquivos(cfg: Config) -> list[tuple[str, str]]:
             )
             continue
 
-        formato = formatos.detectar_formato(formatos.ler_cabecalho(alvo.destino))
+        quadro = limpeza.ler_bruto(alvo.destino)
+        formato = formatos.detectar_formato(list(quadro.columns))
         mapa = formatos.MAPAS[formato]
-        col_casa = mapa["mandante"]
-        col_fora = mapa["visitante"]
 
-        quadro = pd.read_csv(
-            alvo.destino,
-            encoding="utf-8-sig" if formato == "C" else "latin-1",
-            usecols=[col_casa, col_fora],
-            dtype=str,
-        )
-        for coluna in (col_casa, col_fora):
+        for coluna in (mapa["mandante"], mapa["visitante"]):
             for nome in quadro[coluna].dropna().unique():
                 nome = nome.strip()
                 if nome:
@@ -61,6 +60,8 @@ def pares_dos_arquivos(cfg: Config) -> list[tuple[str, str]]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Nome de clube estrangeiro derruba o console cp1252 do Windows.
+    preparar_saida()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--semear",

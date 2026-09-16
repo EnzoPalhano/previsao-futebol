@@ -432,6 +432,7 @@ def construir_tabela(
         mapa=mapa if mapa is not None else nomes_times.carregar_mapa(),
         pendencias=caminho_pendencias(cfg) if salvar_pendencias else None,
     )
+    _conferir_time_contra_si(jogos)
 
     jogos = jogos.sort_values(["data", "liga", "mandante"]).reset_index(drop=True)
     resumo.jogos = len(jogos)
@@ -468,6 +469,37 @@ def _aplicar_nomes_padrao(
             traducao[(liga, nome)] for liga, nome in zip(jogos["liga"], jogos[coluna], strict=True)
         ]
     return jogos
+
+
+def _conferir_time_contra_si(jogos: pd.DataFrame) -> None:
+    """Prova que nenhuma fusão de nomes juntou dois clubes diferentes.
+
+    O ``mapa_times.csv`` é quem decide que duas grafias são o mesmo clube —
+    ``Din. Bucuresti`` e ``Dinamo Bucuresti``, por exemplo. Essa é a decisão
+    mais perigosa do projeto: juntar dois clubes distintos não daria erro, só
+    misturaria dois históricos.
+
+    Mas ela deixa uma prova: se as duas grafias fossem clubes diferentes, elas
+    teriam jogado **uma contra a outra** em algum momento — e depois da fusão
+    esse jogo vira um time contra si mesmo, o que não existe.
+
+    Levanta:
+        ErroDeLimpeza: apontando o clube e a data, se isso acontecer.
+    """
+    contra_si = jogos["mandante"] == jogos["visitante"]
+    if not contra_si.any():
+        return
+
+    exemplos = jogos[contra_si].head(5)
+    detalhe = "; ".join(
+        f"{linha['mandante']} em {linha['data'].date()} ({linha['liga']})"
+        for _, linha in exemplos.iterrows()
+    )
+    raise ErroDeLimpeza(
+        f"{int(contra_si.sum())} jogo(s) ficaram com o mesmo time nos dois lados: "
+        f"{detalhe}. Isso significa que o mapa_times.csv está juntando dois clubes "
+        "diferentes sob o mesmo nome_padrao. Separe-os antes de seguir."
+    )
 
 
 def salvar(jogos: pd.DataFrame, cfg: Config) -> Path:

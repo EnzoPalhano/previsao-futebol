@@ -22,6 +22,7 @@ import sys
 
 from futebol.config import Config, carregar_config
 from futebol.dados import limpeza, nomes_times
+from futebol.terminal import preparar_saida
 
 #: Explicacao curta de cada motivo de descarte, para o resumo no terminal.
 EXPLICACAO_DESCARTE: dict[str, str] = {
@@ -96,6 +97,8 @@ def _explicar_pendencias(erro: nomes_times.NomeDesconhecido, cfg: Config) -> int
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Nome de clube estrangeiro derruba o console cp1252 do Windows.
+    preparar_saida()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--conferir",

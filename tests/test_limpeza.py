@@ -367,3 +367,50 @@ def test_carregar_sem_parquet_diz_o_que_rodar(tmp_path: Path) -> None:
     cfg = config_de_teste(tmp_path)
     with pytest.raises(limpeza.ErroDeLimpeza, match="preparar_dados.py"):
         limpeza.carregar(cfg)
+
+
+# ----------------------------------------------------------------------------
+# A trava contra fusão errada de clubes
+# ----------------------------------------------------------------------------
+def test_fusao_errada_de_clubes_e_pega_pelo_confronto_direto() -> None:
+    """A prova de que duas grafias são clubes diferentes: elas se enfrentaram.
+
+    Juntar dois clubes distintos sob o mesmo ``nome_padrao`` não daria erro
+    nenhum — só misturaria dois históricos. A não ser que exista o jogo de um
+    contra o outro, que depois da fusão vira um time contra si mesmo.
+    """
+    jogos = pd.DataFrame(
+        {
+            "liga": ["I1"],
+            "data": [pd.Timestamp("2024-09-01")],
+            "mandante": ["ITA:Reggiana"],
+            "visitante": ["ITA:Reggiana"],
+        }
+    )
+    with pytest.raises(limpeza.ErroDeLimpeza, match="ITA:Reggiana"):
+        limpeza._conferir_time_contra_si(jogos)
+
+
+def test_tabela_normal_passa_pela_trava(projeto: Path) -> None:
+    cfg = config_de_teste(projeto)
+    mapa = mapa_de(
+        [("ENG", "Arsenal"), ("ENG", "Chelsea"), ("BRA", "Palmeiras"), ("BRA", "Santos")]
+    )
+    resultado = limpeza.construir_tabela(cfg, mapa=mapa, salvar_pendencias=False)
+    assert (resultado.jogos["mandante"] != resultado.jogos["visitante"]).all()
+
+
+def test_mapa_que_junta_dois_clubes_faz_a_tabela_falhar(projeto: Path) -> None:
+    """O mapa é quem decide que duas grafias são o mesmo clube — e pode errar."""
+    cfg = config_de_teste(projeto)
+    mapa = nomes_times.MapaTimes(
+        [
+            {"pais": "ENG", "nome_fonte": "Arsenal", "nome_padrao": "Arsenal"},
+            # Errado de propósito: Chelsea apontando para a chave do Arsenal.
+            {"pais": "ENG", "nome_fonte": "Chelsea", "nome_padrao": "Arsenal"},
+            {"pais": "BRA", "nome_fonte": "Palmeiras", "nome_padrao": "Palmeiras"},
+            {"pais": "BRA", "nome_fonte": "Santos", "nome_padrao": "Santos"},
+        ]
+    )
+    with pytest.raises(limpeza.ErroDeLimpeza, match="mesmo time nos dois lados"):
+        limpeza.construir_tabela(cfg, mapa=mapa, salvar_pendencias=False)
