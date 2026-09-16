@@ -70,6 +70,15 @@ filtro_qualidade_mercado:
   margem_maxima: 0.08           # descarta ligas acima de 8% de margem
   cobertura_minima_odds: 0.90   # pelo menos 90% dos jogos com odds
   jogos_minimos: 1000           # historico suficiente para treinar
+  # Calibracao: o ECE cru pune liga pequena (com 1.200 jogos ele e alto mesmo
+  # num mercado perfeito). Por isso o corte e relativo ao piso de ruido da
+  # propria liga. Limite fixado na Fase 2, DEPOIS de ver os numeros - nenhuma
+  # liga foi reprovada por ele. Ver docs/relatorios/fase2.md.
+  fator_ece_maximo: 2.0
+
+# Ligas aprovadas para BACKTEST DE APOSTAS, escolhidas pelo filtro acima na
+# Fase 2 (nao por escolha manual). Regerar com: python scripts/filtro_ligas.py
+ligas_aprovadas_backtest: [B1, D1, D2, E0, E1, E2, E3, F1, F2, G1, I1, I2, N1, P1, SC0, SP1, SP2, T1]
 
 # ----------------------------------------------------------------------------
 # MODELOS

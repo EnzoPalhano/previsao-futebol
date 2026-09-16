@@ -237,3 +237,78 @@ def remover_margem(odds, metodo: str = "proporcional"):
         resultado[completas] = _IMPLEMENTACOES[metodo](probabilidades[completas])
 
     return resultado[0] if era_um_jogo else resultado
+
+
+# ----------------------------------------------------------------------------
+# Da tabela de jogos para as matrizes de probabilidade
+# ----------------------------------------------------------------------------
+#: As colunas de odd de cada mercado, por momento. A ordem importa: ela define
+#: o índice de cada opção nas matrizes, e é a mesma usada em
+#: :func:`resultado_observado`.
+COLUNAS: dict[tuple[str, str], tuple[str, ...]] = {
+    ("1x2", "pre"): ("odd_pre_H", "odd_pre_D", "odd_pre_A"),
+    ("1x2", "fech"): ("odd_fech_H", "odd_fech_D", "odd_fech_A"),
+    ("ou25", "pre"): ("odd_pre_over25", "odd_pre_under25"),
+    ("ou25", "fech"): ("odd_fech_over25", "odd_fech_under25"),
+}
+
+#: O que cada índice significa, para o relatório não trocar as colunas.
+OPCOES: dict[str, tuple[str, ...]] = {
+    "1x2": ("mandante", "empate", "visitante"),
+    "ou25": ("mais de 2,5", "menos de 2,5"),
+}
+
+
+def _colunas(mercado_: str, momento: str) -> tuple[str, ...]:
+    if (mercado_, momento) not in COLUNAS:
+        conhecidos = ", ".join(f"{m}/{t}" for m, t in COLUNAS)
+        raise ErroDeMercado(
+            f"Mercado {mercado_!r} no momento {momento!r} não existe. "
+            f"Conhecidos: {conhecidos}."
+        )
+    return COLUNAS[(mercado_, momento)]
+
+
+def odds_da_tabela(jogos, mercado_: str = "1x2", momento: str = "pre"):
+    """Recorta da tabela de jogos as colunas de odd de um mercado."""
+    return jogos[list(_colunas(mercado_, momento))].to_numpy(dtype=float)
+
+
+def probabilidades_do_mercado(
+    jogos, mercado_: str = "1x2", momento: str = "pre", metodo: str = "proporcional"
+):
+    """As probabilidades do mercado, já sem a margem, para a tabela inteira.
+
+    É o atalho que liga :mod:`futebol.dados.limpeza` a
+    :mod:`futebol.avaliacao.metricas`: entra a tabela de jogos, saem as
+    probabilidades comparáveis com as de um modelo.
+
+    Jogo sem a odd completa daquele mercado sai como ``NaN`` — e as métricas
+    sabem deixá-lo de fora.
+    """
+    return remover_margem(odds_da_tabela(jogos, mercado_, momento), metodo)
+
+
+def resultado_observado(jogos, mercado_: str = "1x2"):
+    """O índice da opção que aconteceu em cada jogo.
+
+    No 1X2: 0 = vitória do mandante, 1 = empate, 2 = vitória do visitante.
+    No Over/Under 2,5: 0 = saíram 3 gols ou mais, 1 = saíram 2 ou menos.
+
+    A ordem é a mesma de :data:`COLUNAS`, e é o que faz as métricas casarem
+    probabilidade com resultado sem trocar as colunas.
+    """
+    import numpy as _np
+
+    if mercado_ == "1x2":
+        resultado = jogos["resultado"].to_numpy()
+        indices = _np.full(len(resultado), -1, dtype=int)
+        for posicao, letra in enumerate(("H", "D", "A")):
+            indices[resultado == letra] = posicao
+        return indices
+
+    if mercado_ == "ou25":
+        gols = (jogos["gols_mandante"] + jogos["gols_visitante"]).to_numpy()
+        return _np.where(gols > 2.5, 0, 1)
+
+    raise ErroDeMercado(f"Mercado {mercado_!r} não existe. Conhecidos: 1x2, ou25.")
