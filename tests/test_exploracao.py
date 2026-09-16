@@ -187,3 +187,32 @@ def test_pre_contra_fechamento_mede_o_aperto() -> None:
     assert linha["margem_pre"] == pytest.approx(0.25)
     assert linha["margem_fech"] == pytest.approx(0.0)
     assert linha["aperto"] == pytest.approx(0.25)
+
+
+def test_pandemia_enxerga_temporada_de_ano_civil() -> None:
+    """Brasil e EUA chamam o período de "2020", não de "2019/20"."""
+    jogos = tabela(
+        [
+            jogo(3, 0, liga="BRA", temporada="2019"),
+            jogo(0, 1, liga="BRA", temporada="2020"),
+            jogo(0, 2, liga="BRA", temporada="2021"),
+        ]
+    )
+    comparacao = exploracao.queda_do_mando_na_pandemia(jogos)
+
+    assert len(comparacao) == 1
+    assert comparacao.iloc[0]["pontos_casa_publico"] == pytest.approx(3.0)
+    assert comparacao.iloc[0]["pontos_casa_vazio"] == pytest.approx(0.0)
+
+
+def test_liga_sem_os_dois_lados_fica_fora_da_comparacao() -> None:
+    """Contá-la no denominador de "caiu em X de Y ligas" seria mentira."""
+    jogos = tabela(
+        [
+            jogo(3, 0, liga="E0", temporada="2018/19"),
+            jogo(0, 1, liga="E0", temporada="2020/21"),
+            jogo(1, 0, liga="XX", temporada="2018/19"),  # nunca jogou sem público
+        ]
+    )
+    comparacao = exploracao.queda_do_mando_na_pandemia(jogos)
+    assert list(comparacao["liga"]) == ["E0"]

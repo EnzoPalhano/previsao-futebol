@@ -26,6 +26,9 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+from futebol.relatorio import pct as _pct
+from futebol.relatorio import tabela_markdown as _tabela_markdown
+
 #: Os quatro mercados que o projeto mede, e as colunas que cada um exige.
 #: Um jogo só "tem" o mercado se **todas** as colunas dele estiverem
 #: preenchidas: odd de empate faltando torna o 1X2 inutilizável, mesmo com as
@@ -155,20 +158,6 @@ def vies_de_selecao(jogos: pd.DataFrame, *, mercado: str = MERCADO_DE_APOSTA) ->
 # ----------------------------------------------------------------------------
 # Relatório em Markdown
 # ----------------------------------------------------------------------------
-def _pct(valor: float) -> str:
-    """Fração vira porcentagem com uma casa — e ``-`` quando não se aplica."""
-    if pd.isna(valor):
-        return "-"
-    return f"{valor * 100:.1f}%"
-
-
-def _tabela_markdown(linhas: list[list[str]], cabecalho: list[str]) -> str:
-    partes = ["| " + " | ".join(cabecalho) + " |"]
-    partes.append("|" + "|".join(["---"] * len(cabecalho)) + "|")
-    partes += ["| " + " | ".join(linha) + " |" for linha in linhas]
-    return "\n".join(partes)
-
-
 def _secao_por_liga(jogos: pd.DataFrame) -> str:
     tabela = por(jogos, ["grupo", "liga"])
     linhas = [

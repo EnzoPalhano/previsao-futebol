@@ -132,8 +132,16 @@ def vantagem_mando(jogos: pd.DataFrame, por: list[str] | None = None) -> pd.Data
     )
 
 
+#: As temporadas jogadas total ou parcialmente sem público.
+#: ⚠️ Precisa das **duas** formas: as ligas europeias chamam esse período de
+#: ``2019/20`` e ``2020/21``, mas Brasil, EUA, Japão e os outros campeonatos de
+#: calendário civil chamam de ``2020`` e ``2021``. Esquecer as segundas faz
+#: metade das competições sair da conta sem avisar.
+TEMPORADAS_SEM_PUBLICO: tuple[str, ...] = ("2019/20", "2020/21", "2020", "2021")
+
+
 def queda_do_mando_na_pandemia(
-    jogos: pd.DataFrame, temporadas_vazias: tuple[str, ...] = ("2019/20", "2020/21")
+    jogos: pd.DataFrame, temporadas_vazias: tuple[str, ...] = TEMPORADAS_SEM_PUBLICO
 ) -> pd.DataFrame:
     """Compara o mando das temporadas de portões fechados com as demais.
 
@@ -143,6 +151,10 @@ def queda_do_mando_na_pandemia(
     ⚠️ 2019/20 entra na lista porque foi interrompida em março de 2020 e
     terminou sem público — só a parte final dela foi afetada, o que **dilui** o
     efeito medido nessa temporada.
+
+    Liga sem nenhuma temporada de um dos dois lados fica **fora** da tabela, em
+    vez de aparecer com a coluna vazia: ela não pode ser comparada, e contá-la
+    no denominador de "o mando caiu em X de Y ligas" seria mentira.
     """
     por_temporada = vantagem_mando(jogos, ["liga", "temporada"])
     vazias = por_temporada["temporada"].isin(temporadas_vazias)
@@ -163,7 +175,7 @@ def queda_do_mando_na_pandemia(
         comparacao[f"queda_{medida}"] = (
             comparacao[f"{medida}_publico"] - comparacao[f"{medida}_vazio"]
         )
-    return comparacao.reset_index()
+    return comparacao.dropna().reset_index()
 
 
 # ----------------------------------------------------------------------------

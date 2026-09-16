@@ -201,5 +201,5 @@ def test_relatorio_avisa_quando_faltam_odds() -> None:
         tabela([COMPLETO, sem_odd]), camada="teste", gerado_em="2026-09-16"
     )
 
-    assert "50.0%" in texto
+    assert "50,0%" in texto
     assert "Fase 6" in texto
