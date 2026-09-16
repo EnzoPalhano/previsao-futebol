@@ -28,8 +28,8 @@ existe (ou não) vantagem sobre o mercado.
 |---|---|---|
 | 0 | Configuração do ambiente | ✅ concluída |
 | 1 | Coleta e limpeza de dados | ✅ concluída |
-| 2 | Análise exploratória e o "mercado" | ⏳ próxima |
-| 3 | Modelos de Poisson e Dixon-Coles | — |
+| 2 | Análise exploratória e o "mercado" | ✅ concluída |
+| 3 | Modelos de Poisson e Dixon-Coles | ⏳ próxima |
 | 4 | Avaliação honesta (walk-forward) | — |
 | 5 | Features e machine learning | — |
 | 6 | Backtest de apostas | — |
@@ -61,8 +61,9 @@ pytest
 No Mac/Linux, troque o passo 2 por `source .venv/bin/activate`.
 
 Os guias completos, escritos para quem nunca programou:
-[Fase 0 — preparar o computador](docs/guias/GUIA_FASE_0.md) e
-[Fase 1 — trazer os jogos para dentro do projeto](docs/guias/GUIA_FASE_1.md).
+[Fase 0 — preparar o computador](docs/guias/GUIA_FASE_0.md),
+[Fase 1 — trazer os jogos para dentro do projeto](docs/guias/GUIA_FASE_1.md) e
+[Fase 2 — medindo o adversário](docs/guias/GUIA_FASE_2.md).
 
 ---
 
@@ -77,6 +78,8 @@ Os guias completos, escritos para quem nunca programou:
 | Conferir o disco contra o manifesto | `python scripts/baixar_dados.py --conferir` |
 | Montar a tabela de jogos | `python scripts/preparar_dados.py` |
 | Gerar o relatório de cobertura | `python scripts/relatorio_cobertura.py` |
+| Escolher as ligas por qualidade de mercado | `python scripts/filtro_ligas.py` |
+| Gerar o relatório da Fase 2 | `python scripts/relatorio_fase2.py` |
 | Rodar o backtest | `python scripts/backtest.py` *(Fase 6)* |
 | Abrir o app | `streamlit run src/futebol/app/streamlit_app.py` *(Fase 8)* |
 
@@ -106,6 +109,23 @@ A tabela unificada (`data/processed/jogos.parquet`) guarda cada time como `PAÍS
 `ENG:Everton` e `CHI:Everton` são clubes diferentes, e juntá-los por engano corromperia as
 médias sem dar erro. A cobertura de odds por liga, temporada e mercado está em
 [`docs/relatorios/cobertura_fase1.md`](docs/relatorios/cobertura_fase1.md).
+
+---
+
+## O que já foi medido
+
+A [Fase 2](docs/relatorios/fase2.md) mediu o mercado nas 38 competições, e o resultado
+define o tamanho do desafio:
+
+| Pergunta | Resposta |
+|---|---|
+| Quanto a casa cobra? | De **4,3%** (Premier League) a **9,3%** (4ª divisão escocesa) |
+| O mercado é bem calibrado? | **Sim** — quando a odd diz 60%, acontece perto de 60% |
+| Qual a meta dos modelos? | **Log loss 0,9984**, contra 1,0986 de quem chuta 33% para cada |
+| Em quais ligas dá para apostar? | **18 das 22** do Grupo 1, escolhidas por medição |
+
+A vantagem de jogar em casa caiu em **29 das 38 competições** nas temporadas de estádios
+vazios (2020-21) — motivo pelo qual o fator casa dos modelos não pode ser uma constante.
 
 ---
 
