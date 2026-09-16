@@ -38,6 +38,11 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# O mapa de nomes de times e um CSV dentro do pacote: sem isto, ele so existe
+# na instalacao editavel (pip install -e .) e some numa instalacao normal.
+[tool.setuptools.package-data]
+futebol = ["dados/*.csv"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
