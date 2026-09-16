@@ -27,8 +27,8 @@ existe (ou não) vantagem sobre o mercado.
 | Fase | Descrição | Situação |
 |---|---|---|
 | 0 | Configuração do ambiente | ✅ concluída |
-| 1 | Coleta e limpeza de dados | ⏳ próxima |
-| 2 | Análise exploratória e o "mercado" | — |
+| 1 | Coleta e limpeza de dados | ✅ concluída |
+| 2 | Análise exploratória e o "mercado" | ⏳ próxima |
 | 3 | Modelos de Poisson e Dixon-Coles | — |
 | 4 | Avaliação honesta (walk-forward) | — |
 | 5 | Features e machine learning | — |
@@ -60,8 +60,9 @@ pytest
 
 No Mac/Linux, troque o passo 2 por `source .venv/bin/activate`.
 
-O guia completo, escrito para quem nunca programou, está em
-[`docs/guias/GUIA_FASE_0.md`](docs/guias/GUIA_FASE_0.md).
+Os guias completos, escritos para quem nunca programou:
+[Fase 0 — preparar o computador](docs/guias/GUIA_FASE_0.md) e
+[Fase 1 — trazer os jogos para dentro do projeto](docs/guias/GUIA_FASE_1.md).
 
 ---
 
@@ -72,7 +73,10 @@ O guia completo, escrito para quem nunca programou, está em
 | Rodar os testes | `pytest` |
 | Verificar o estilo do código | `ruff check .` |
 | Corrigir o estilo automaticamente | `ruff check . --fix` |
-| Baixar os dados | `python scripts/baixar_dados.py` *(Fase 1)* |
+| Baixar os dados | `python scripts/baixar_dados.py` |
+| Conferir o disco contra o manifesto | `python scripts/baixar_dados.py --conferir` |
+| Montar a tabela de jogos | `python scripts/preparar_dados.py` |
+| Gerar o relatório de cobertura | `python scripts/relatorio_cobertura.py` |
 | Rodar o backtest | `python scripts/backtest.py` *(Fase 6)* |
 | Abrir o app | `streamlit run src/futebol/app/streamlit_app.py` *(Fase 8)* |
 
@@ -97,6 +101,11 @@ Ao todo são **~117.000 jogos**, dos quais ~53.800 elegíveis para simulação d
 > As pastas `data/raw/` e `data/processed/` **não vão para o Git**. A reprodutibilidade é
 > garantida pelo `data/manifesto.json`, que registra URL, data, número de linhas e SHA-256 de
 > cada arquivo baixado.
+
+A tabela unificada (`data/processed/jogos.parquet`) guarda cada time como `PAÍS:nome` —
+`ENG:Everton` e `CHI:Everton` são clubes diferentes, e juntá-los por engano corromperia as
+médias sem dar erro. A cobertura de odds por liga, temporada e mercado está em
+[`docs/relatorios/cobertura_fase1.md`](docs/relatorios/cobertura_fase1.md).
 
 ---
 
