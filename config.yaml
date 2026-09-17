@@ -99,6 +99,16 @@ modelos:
   elo:
     k: 20
     rating_inicial: 1500
+    # Vantagem de jogar em casa, em PONTOS DE ELO, somada ao mandante no calculo
+    # da expectativa. MEDIDA, nao chutada: nos 53.009 jogos anteriores ao inicio
+    # da janela de validacao o mandante somou 0,5719 ponto por jogo, e a
+    # diferenca de Elo que produz isso entre dois times iguais e
+    # -400*log10(1/0,5719 - 1) = 50,3. Congelada dai, como o fator casa unico da
+    # Fase 4: nenhum jogo da janela avaliada entrou nesta conta.
+    # ATENCAO: varia muito por pais (20 no Japao, 32 na Inglaterra, 90 no Brasil,
+    # 99 nos EUA). Um numero so e simplificacao consciente - quem carrega a
+    # vantagem de casa por competicao e o Dixon-Coles, que tambem e feature.
+    vantagem_casa: 50
   # ENCOLHIMENTO (shrinkage) das forcas de ataque e defesa para a media da liga.
   # jogos_equivalentes = quantos jogos de historia a media da liga vale:
   #     forca do time ~ (n / (n + jogos_equivalentes)) * forca que os jogos dele pedem
