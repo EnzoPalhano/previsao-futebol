@@ -17,6 +17,7 @@ import pytest
 
 from futebol.config import carregar_config
 from futebol.dados import download, formatos
+from rede import baixar_ou_pular
 
 
 # ----------------------------------------------------------------------------
@@ -177,7 +178,7 @@ def test_inventario_da_fonte_continua_valendo(
         if grupo == "grupo1"
         else download.alvo_grupo2(cfg, codigo)
     )
-    download.baixar_alvo(
+    baixar_ou_pular(
         alvo,
         user_agent=str(fontes["user_agent"]),
         timeout=int(fontes["timeout_segundos"]),

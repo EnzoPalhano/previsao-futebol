@@ -18,6 +18,7 @@ import requests
 
 from futebol.config import Config, carregar_config
 from futebol.dados import download
+from rede import baixar_ou_pular
 
 
 # ----------------------------------------------------------------------------
@@ -188,7 +189,9 @@ def test_baixa_de_verdade_da_fonte(cfg_temporario: Config) -> None:
     fontes = cfg_temporario.secao("fontes")
     alvo = download.alvo_grupo1(cfg_temporario, "E0", 2425)
 
-    resultado = download.baixar_alvo(
+    # `baixar_ou_pular` e nao `download.baixar_alvo`: falha de conexao vira
+    # skip, e so mudanca da fonte reprova. Ver tests/rede.py.
+    resultado = baixar_ou_pular(
         alvo,
         user_agent=str(fontes["user_agent"]),
         timeout=int(fontes["timeout_segundos"]),

@@ -408,6 +408,19 @@ São treze configurações, cada uma reajustando 38 ligas por mês da janela. Qu
 python scripts/relatorio_fase3.py --so-ver
 ```
 
+### O `pytest` mostra "1 skipped" em `test_baixa_de_verdade_da_fonte`
+
+É esperado e não é erro. Esse é o único teste que sai para a internet: ele confere se o
+football-data.co.uk continua entregando as colunas que o projeto espera. Numa rede com
+proxy ou filtro de domínio ele não consegue chegar lá e **se pula sozinho**, em vez de
+reprovar — falta de internet não diz nada sobre o projeto.
+
+Se você vir `HTTPConnectionPool(host='127.0.0.1', port=80)` numa mensagem de download, é
+esse caso: o site redireciona `www.football-data.co.uk` para `football-data.co.uk` (sem o
+`www`), e a rede filtrada recusa esse segundo endereço. Os dados já baixados não são
+afetados — `python scripts/baixar_dados.py --conferir` continua dizendo OK para os 170
+arquivos.
+
 ### Os acentos aparecem errados no PowerShell
 
 Não afeta os arquivos gravados. Se incomodar, rode `chcp 65001` antes.
@@ -423,7 +436,9 @@ Não afeta os arquivos gravados. Se incomodar, rode `chcp 65001` antes.
 - [ ] no relatório, `dixon-coles` tem log loss **menor** que `poisson`, que tem log loss
       menor que `baseline`
 - [ ] no relatório, o **mercado** tem a menor log loss de todas (é o esperado!)
-- [ ] `pytest` mostra **309 passed** (6 desses testes precisam de internet)
+- [ ] `pytest` mostra **309 passed** — ou **308 passed, 1 skipped**, que também
+      está certo: o teste pulado é o único que baixa da internet, e ele se pula
+      sozinho quando a rede tem proxy ou filtro (veja a [seção 9](#9-erros-comuns))
 - [ ] `ruff check .` mostra **All checks passed!**
 - [ ] `git tag` mostra `fase-3`
 
