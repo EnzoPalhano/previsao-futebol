@@ -142,6 +142,21 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     jogo = resolucao.jogo
+
+    # Sem jogo daquela liga antes da data, o modelo nem chega a ser ajustado
+    # para ela - e o erro que sairia ("liga nao estava no treino") esconderia a
+    # causa de verdade, que e a data pedida ser anterior ao inicio da liga na
+    # tabela. O Grupo 1 comeca em 2019/20; o Grupo 2, em 2012.
+    da_liga = jogos[(jogos["liga"] == jogo.liga) & (jogos["data"] < data)]
+    if da_liga.empty:
+        primeiro = jogos.loc[jogos["liga"] == jogo.liga, "data"].min()
+        print(
+            f"ERRO: a liga {jogo.liga} nao tem nenhum jogo anterior a "
+            f"{data.date()} na tabela. O primeiro jogo dela e de "
+            f"{pd.Timestamp(primeiro).date()} - escolha uma --data depois disso."
+        )
+        return 2
+
     modelo = MODELOS[args.modelo](cfg=cfg)
     try:
         modelo.treinar(jogos, ate_data=data)

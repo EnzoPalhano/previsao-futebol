@@ -29,8 +29,8 @@ existe (ou não) vantagem sobre o mercado.
 | 0 | Configuração do ambiente | ✅ concluída |
 | 1 | Coleta e limpeza de dados | ✅ concluída |
 | 2 | Análise exploratória e o "mercado" | ✅ concluída |
-| 3 | Modelos de Poisson e Dixon-Coles | ⏳ próxima |
-| 4 | Avaliação honesta (walk-forward) | — |
+| 3 | Modelos de Poisson e Dixon-Coles | ✅ concluída |
+| 4 | Avaliação honesta (walk-forward) | ⏳ próxima |
 | 5 | Features e machine learning | — |
 | 6 | Backtest de apostas | — |
 | 7 | Múltiplas e cash out | — |
@@ -62,8 +62,9 @@ No Mac/Linux, troque o passo 2 por `source .venv/bin/activate`.
 
 Os guias completos, escritos para quem nunca programou:
 [Fase 0 — preparar o computador](docs/guias/GUIA_FASE_0.md),
-[Fase 1 — trazer os jogos para dentro do projeto](docs/guias/GUIA_FASE_1.md) e
-[Fase 2 — medindo o adversário](docs/guias/GUIA_FASE_2.md).
+[Fase 1 — trazer os jogos para dentro do projeto](docs/guias/GUIA_FASE_1.md),
+[Fase 2 — medindo o adversário](docs/guias/GUIA_FASE_2.md) e
+[Fase 3 — o primeiro modelo](docs/guias/GUIA_FASE_3.md).
 
 ---
 
@@ -80,6 +81,8 @@ Os guias completos, escritos para quem nunca programou:
 | Gerar o relatório de cobertura | `python scripts/relatorio_cobertura.py` |
 | Escolher as ligas por qualidade de mercado | `python scripts/filtro_ligas.py` |
 | Gerar o relatório da Fase 2 | `python scripts/relatorio_fase2.py` |
+| Prever um jogo | `python scripts/prever.py --mandante "Arsenal" --visitante "Chelsea"` |
+| Gerar o relatório da Fase 3 | `python scripts/relatorio_fase3.py` |
 | Rodar o backtest | `python scripts/backtest.py` *(Fase 6)* |
 | Abrir o app | `streamlit run src/futebol/app/streamlit_app.py` *(Fase 8)* |
 
@@ -126,6 +129,25 @@ define o tamanho do desafio:
 
 A vantagem de jogar em casa caiu em **29 das 38 competições** nas temporadas de estádios
 vazios (2020-21) — motivo pelo qual o fator casa dos modelos não pode ser uma constante.
+
+A [Fase 3](docs/relatorios/fase3.md) construiu os três primeiros modelos e os mediu fora
+da amostra, em 11.151 jogos que nenhum deles tinha visto:
+
+| Quem prevê | Log loss (menor é melhor) |
+|---|---|
+| chute uniforme (33/33/33) | 1,0986 |
+| histórico da liga (baseline) | 1,0746 |
+| Poisson (ataque, defesa, fator casa) | 1,0263 |
+| Dixon-Coles | **1,0192** |
+| mercado de fechamento | **0,9914** |
+
+**O mercado ganha, e isso era o esperado.** A odd de fechamento embute lesão, escalação e
+o dinheiro de milhares de apostadores profissionais. A pergunta que interessa não é "meu
+modelo bate o mercado em média?", e sim "existe jogo em que o mercado errou mais que eu?" —
+que é a pergunta da Fase 6.
+
+⚠️ Os números da Fase 3 são **provisórios**: a medição oficial, rodada a rodada, é da
+Fase 4, e é dela que sai a escolha do modelo.
 
 ---
 
