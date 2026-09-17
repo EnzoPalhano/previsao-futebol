@@ -563,6 +563,7 @@ class Poisson(base.Modelo):
         max_gols: int | None = None,
         jogos_equivalentes: float | None = None,
         fator_casa: str | None = None,
+        valor_fator_casa: float | None = None,
     ) -> None:
         super().__init__()
         secao = cfg.secao("modelos") if cfg is not None else {}
@@ -588,16 +589,33 @@ class Poisson(base.Modelo):
                 f"fator_casa deve ser 'por_liga' ou 'global'; veio {fator_casa!r}."
             )
         self.modo_fator_casa = fator_casa
+        #: Valor de fator casa imposto de fora, em vez de medido. Só vale no
+        #: modo ``"global"``: é como se roda a variante "um fator casa único,
+        #: fixado antes da janela de avaliação" sem precisar remedi-lo em cada
+        #: rodada do walk-forward (que custaria ajustar as 38 ligas por rodada,
+        #: quarenta vezes mais trabalho para a mesma resposta).
+        self.valor_fator_casa = (
+            None if valor_fator_casa is None else float(valor_fator_casa)
+        )
+        if self.valor_fator_casa is not None and self.modo_fator_casa != "global":
+            raise base.ErroDeModelo(
+                "valor_fator_casa só faz sentido com fator_casa='global'; "
+                f"veio com fator_casa={self.modo_fator_casa!r}."
+            )
         #: Um ajuste por liga, preenchido no treino.
         self.ajustes: dict[str, AjusteLiga] = {}
-        #: O fator casa medido no conjunto todo (só no modo ``"global"``).
+        #: O fator casa usado no modo ``"global"`` — medido nos jogos de treino
+        #: ou imposto por ``valor_fator_casa``.
         self.fator_casa_medido: float | None = None
 
     # -- treino ------------------------------------------------------------
     def _ajustar(self, jogos: pd.DataFrame) -> None:
-        self.fator_casa_medido = (
-            fator_casa_global(jogos) if self.modo_fator_casa == "global" else None
-        )
+        if self.modo_fator_casa != "global":
+            self.fator_casa_medido = None
+        elif self.valor_fator_casa is not None:
+            self.fator_casa_medido = self.valor_fator_casa
+        else:
+            self.fator_casa_medido = fator_casa_global(jogos)
         self.ajustes = {
             str(liga): ajustar_liga(
                 da_liga,

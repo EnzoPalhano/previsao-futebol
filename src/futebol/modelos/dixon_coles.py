@@ -275,6 +275,7 @@ class DixonColes(modelo_poisson.Poisson):
         xi: float | None = None,
         jogos_equivalentes: float | None = None,
         fator_casa: str | None = None,
+        valor_fator_casa: float | None = None,
     ) -> None:
         secao = cfg.secao("modelos") if cfg is not None else {}
         do_config = secao.get("dixon_coles", {})
@@ -283,6 +284,7 @@ class DixonColes(modelo_poisson.Poisson):
             max_gols=max_gols if max_gols is not None else do_config.get("max_gols"),
             jogos_equivalentes=jogos_equivalentes,
             fator_casa=fator_casa,
+            valor_fator_casa=valor_fator_casa,
         )
         self.xi = float(xi if xi is not None else do_config.get("xi", XI_PADRAO))
         if self.xi < 0:
