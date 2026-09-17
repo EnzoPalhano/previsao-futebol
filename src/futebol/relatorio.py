@@ -69,8 +69,10 @@ def de_dataframe(
         "pct": pct,
         "pct2": lambda v: pct(v, 2),
         "num": num,
+        "num0": lambda v: num(v, 0),
         "num2": lambda v: num(v, 2),
         "num3": lambda v: num(v, 3),
+        "num4": lambda v: num(v, 4),
         "inteiro": inteiro,
     }
 
