@@ -50,6 +50,12 @@ def _mostrar_resumo(resultado: limpeza.ResultadoLimpeza) -> None:
     else:
         print("\nNenhuma linha descartada.")
 
+    if resumo.odds_impossiveis:
+        print(
+            f"\nATENCAO: {resumo.odds_impossiveis} odd(s) menores ou iguais a 1,00 "
+            "foram descartadas (erro da fonte). O jogo continua na tabela."
+        )
+
     if resumo.divergencias_resultado:
         print(
             f"\nATENCAO: em {resumo.divergencias_resultado} jogo(s) a coluna de "

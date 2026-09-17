@@ -103,6 +103,29 @@ def brier(probabilidades, observado) -> float:
     return float(((probabilidades - real) ** 2).sum(axis=1).mean())
 
 
+def acuracia(probabilidades, observado) -> float:
+    """Fração de jogos em que a opção mais provável foi a que aconteceu.
+
+    ⚠️ **Esta é a métrica que o projeto reporta e não usa para decidir nada.**
+    Ela está aqui porque é a primeira pergunta que todo mundo faz ("quantos por
+    cento o modelo acerta?") e porque, sozinha, ela engana de três formas:
+
+    1. **ignora a confiança.** Dizer 95% e errar conta igual a dizer 34% e errar;
+    2. **ignora o empate.** No 1X2, o empate quase nunca é a opção mais
+       provável — ele fica em torno de 26%. Um modelo que **nunca** aponta
+       empate pode ter acurácia alta e ser inútil para apostar;
+    3. **depende da liga.** Onde o mandante ganha 48% dos jogos, apontar sempre
+       o mandante já dá 48% de acerto sem modelo nenhum.
+
+    Por isso a escolha de modelo é por log loss (regra 9). A acurácia serve de
+    conferência de sanidade e de tradução para quem está começando.
+    """
+    probabilidades, observado = _validar(probabilidades, observado)
+    if len(observado) == 0:
+        return float("nan")
+    return float((probabilidades.argmax(axis=1) == observado).mean())
+
+
 # ----------------------------------------------------------------------------
 # Calibração
 # ----------------------------------------------------------------------------

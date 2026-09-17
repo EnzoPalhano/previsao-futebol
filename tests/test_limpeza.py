@@ -146,6 +146,30 @@ def test_formato_c_fica_sem_odd_pre_jogo(tmp_path: Path) -> None:
         assert pd.isna(linha[coluna]), f"{coluna} não pode ter valor no formato C"
 
 
+def test_odd_impossivel_vira_vazia_e_o_jogo_fica(tmp_path: Path) -> None:
+    """Odd <= 1,00 não existe: ela pagaria menos do que o apostador arriscou.
+
+    A fonte tem esse erro de digitação — o Colônia x RB Leipzig de 01/06/2020
+    está com ``0.42`` no fechamento de Over 2,5. Precisa morrer aqui, na
+    limpeza, porque ``1/0,42`` dá 238% de probabilidade implícita e um jogo
+    desses entra na média de margem de uma liga inteira sem dar erro nenhum.
+
+    O jogo continua na tabela: o problema é da odd, não da partida.
+    """
+    arquivo = csv_formato_a(
+        tmp_path, [{**JOGO_A, "AvgC>2.5": "0.42", "AvgH": "1.00"}]
+    )
+    tabela, resumo = limpeza.converter(arquivo, liga="E0", temporada="2024/25")
+
+    assert len(tabela) == 1, "o placar do jogo continua valendo para treinar"
+    linha = tabela.iloc[0]
+    assert pd.isna(linha["odd_fech_over25"]), "a odd de 0,42 tinha que sumir"
+    assert pd.isna(linha["odd_pre_H"]), "odd de 1,00 também é impossível"
+    assert linha["odd_pre_D"] == 3.60, "as odds boas do mesmo jogo continuam"
+    assert resumo.odds_impossiveis == 2
+    assert resumo.descartes == {}, "nenhuma LINHA foi descartada por isso"
+
+
 def test_coluna_opcional_ausente_vira_coluna_vazia(tmp_path: Path) -> None:
     """RUS não traz B365 nem Betfair, e ainda assim tem que virar tabela."""
     colunas = [c for c in sorted(formatos.COLUNAS_ESSENCIAIS["C"]) if c != "AvgCD"]

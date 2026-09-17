@@ -193,6 +193,8 @@ class ResumoLimpeza:
         descartes: motivo -> quantidade de linhas descartadas.
         divergencias_resultado: jogos em que a coluna de resultado da fonte não
             batia com o placar. O placar prevaleceu.
+        odds_impossiveis: odds descartadas por serem menores ou iguais a 1,00.
+            A linha do jogo continua na tabela; só aquela odd fica vazia.
         arquivos: quantos arquivos foram lidos.
     """
 
@@ -200,6 +202,7 @@ class ResumoLimpeza:
     jogos: int = 0
     descartes: Counter = field(default_factory=Counter)
     divergencias_resultado: int = 0
+    odds_impossiveis: int = 0
     arquivos: int = 0
 
     @property
@@ -215,6 +218,7 @@ class ResumoLimpeza:
             divergencias_resultado=(
                 self.divergencias_resultado + outro.divergencias_resultado
             ),
+            odds_impossiveis=self.odds_impossiveis + outro.odds_impossiveis,
             arquivos=self.arquivos + outro.arquivos,
         )
 
@@ -289,8 +293,39 @@ def converter(
     for coluna in ("mandante", "visitante"):
         tabela[coluna] = tabela[coluna].fillna("").astype(str).str.strip()
 
+    tabela, resumo = _limpar_odds(tabela, resumo)
     tabela, resumo = _descartar_invalidas(tabela, resumo)
     return tabela[list(COLUNAS_TABELA)], resumo
+
+
+def _limpar_odds(
+    tabela: pd.DataFrame, resumo: ResumoLimpeza
+) -> tuple[pd.DataFrame, ResumoLimpeza]:
+    """Odd menor ou igual a 1,00 vira vazia. O jogo continua na tabela.
+
+    Uma odd de 1,00 devolveria exatamente o que foi apostado, e uma de 0,42
+    devolveria menos — não existe aposta assim. Quando aparece, é erro de
+    digitação da fonte, e a fonte tem alguns: o Colônia x RB Leipzig de
+    01/06/2020 está com ``0.42`` no fechamento de Over 2,5.
+
+    ⚠️ Por que isto tem de ser consertado **aqui**, e não em quem usa: a odd
+    vira probabilidade implícita ``1/odd``, e ``1/0,42`` dá 238%. Um único jogo
+    desses entra na média de margem de uma liga inteira e distorce o número sem
+    dar erro em lugar nenhum. Descartar a odd é a correção mínima: o placar
+    daquele jogo continua valendo para treinar o modelo, e só a aposta
+    impossível some.
+
+    A linha não é descartada porque o problema é da odd, não do jogo — e por
+    isso a contagem vai para :attr:`ResumoLimpeza.odds_impossiveis`, separada
+    dos descartes de linha.
+    """
+    for coluna in COLUNAS_ODDS:
+        impossivel = (tabela[coluna] <= 1.0).fillna(False)
+        quantas = int(impossivel.sum())
+        if quantas:
+            resumo.odds_impossiveis += quantas
+            tabela.loc[impossivel, coluna] = float("nan")
+    return tabela, resumo
 
 
 def _descartar_invalidas(
