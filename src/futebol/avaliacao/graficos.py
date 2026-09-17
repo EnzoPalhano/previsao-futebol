@@ -44,6 +44,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402 - depende do backend acima
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
 from matplotlib.ticker import FuncFormatter  # noqa: E402
 
 from futebol.avaliacao import metricas, validacao  # noqa: E402
@@ -274,4 +275,64 @@ def distancia_do_mercado(
                 color=TINTA,
             )
 
+    return _salvar(figura, destino)
+
+
+# ----------------------------------------------------------------------------
+# 3. Importancia das features (Fase 5)
+# ----------------------------------------------------------------------------
+def importancia_das_features(
+    importancia: pd.DataFrame,
+    destino: Path,
+    titulo: str = "De onde o LightGBM tira o que ele sabe",
+) -> Path:
+    """Barras horizontais da importancia relativa de cada feature.
+
+    Args:
+        importancia: colunas ``feature``, ``pct`` e ``familia``, ja ordenada da
+            mais importante para a menos.
+        destino: caminho do PNG.
+
+    As barras sao coloridas por **familia** de feature, e nao uma cor por
+    feature: o que a figura tem a dizer e de qual origem vem o conhecimento do
+    modelo, e vinte e tres cores distintas esconderiam isso atras de um
+    arco-iris. A legenda traz a soma de cada familia, que e o numero que
+    responde a pergunta.
+    """
+    ordenada = importancia.sort_values("pct")
+    familias = list(dict.fromkeys(importancia["familia"]))
+    cor_da_familia = {
+        familia: PALETA[indice % len(PALETA)]
+        for indice, familia in enumerate(familias)
+    }
+
+    altura = max(4.0, 0.28 * len(ordenada) + 1.4)
+    figura, eixo = _eixos(largura=8.5, altura=altura)
+    eixo.grid(axis="y", visible=False)
+
+    eixo.barh(
+        ordenada["feature"],
+        ordenada["pct"],
+        color=[cor_da_familia[f] for f in ordenada["familia"]],
+        height=0.72,
+    )
+    eixo.xaxis.set_major_formatter(_virgula(0))
+    eixo.set_xlabel("participacao no ganho das arvores (%)", color=TINTA_SECUNDARIA)
+    eixo.set_title(titulo, color=TINTA, fontsize=12, pad=12, loc="left")
+
+    somas = importancia.groupby("familia")["pct"].sum()
+    alcas = [
+        Patch(
+            facecolor=cor_da_familia[familia],
+            label=f"{familia} ({somas[familia]:.0f}%)".replace(".", ","),
+        )
+        for familia in familias
+    ]
+    eixo.legend(
+        handles=alcas,
+        frameon=False,
+        fontsize=9,
+        labelcolor=TINTA,
+        loc="lower right",
+    )
     return _salvar(figura, destino)

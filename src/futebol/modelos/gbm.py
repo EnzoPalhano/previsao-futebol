@@ -369,8 +369,61 @@ class GBM(base.Modelo):
             )
         return features.loc[[chave], self.fabrica.colunas]
 
+    def importancia(self) -> pd.DataFrame:
+        """Quanto cada feature contribuiu, em participação no ganho das árvores.
+
+        Retorna:
+            ``DataFrame`` com ``feature``, ``pct`` e ``familia``, da mais
+            importante para a menos.
+
+        ⚠️ **Importância não é causalidade, e nem sequer é "utilidade".** O
+        ``gain`` mede quanto as divisões naquela coluna reduziram o erro *dentro
+        do treino*. Uma feature pode aparecer alto por ser útil ou por ser
+        contínua e cheia de valores distintos, que dá à árvore muitos lugares
+        onde cortar. E duas features que dizem a mesma coisa dividem o crédito
+        entre si, então uma importância baixa pode significar "redundante", não
+        "inútil". O que responde de verdade "esta feature paga?" é tirá-la e
+        medir de novo — que é exatamente o que a variante ``gbm-sem-dc`` faz.
+        """
+        ajuste = self._exigir_ajuste()
+        ganhos = np.zeros(len(self.fabrica.colunas), dtype=float)
+        for regressor in (ajuste.gols_mandante, ajuste.gols_visitante):
+            ganhos += np.asarray(
+                regressor.booster_.feature_importance("gain"), dtype=float
+            )
+        tabela = pd.DataFrame(
+            {
+                "feature": self.fabrica.colunas,
+                "pct": 100.0 * ganhos / ganhos.sum() if ganhos.sum() else ganhos,
+            }
+        )
+        tabela["familia"] = [familia_da_feature(c) for c in tabela["feature"]]
+        return tabela.sort_values("pct", ascending=False).reset_index(drop=True)
+
     def _exigir_ajuste(self) -> Ajuste:
         self._exigir_treinado()
         if self._ajuste is None:  # pragma: no cover - treinar sempre preenche
             raise ErroDeGBM("O GBM foi treinado sem produzir ajuste.")
         return self._ajuste
+
+
+#: Como cada feature e explicada no relatorio da Fase 5. A especificacao pede
+#: que a importancia venha acompanhada do que cada coluna significa - um grafico
+#: com vinte e tres nomes tecnicos e uma figura, nao uma explicacao.
+FAMILIAS: dict[str, str] = {
+    "dc_": "Dixon-Coles",
+    "elo": "Elo",
+    "gols_": "forma (gols)",
+    "pontos": "forma (pontos)",
+    "historico": "forma (pontos)",
+    "descanso": "calendário",
+    "estadio": "calendário",
+}
+
+
+def familia_da_feature(nome: str) -> str:
+    """A familia a que uma feature pertence, para colorir e somar no relatorio."""
+    for prefixo, familia in FAMILIAS.items():
+        if nome.startswith(prefixo):
+            return familia
+    return "outras"
