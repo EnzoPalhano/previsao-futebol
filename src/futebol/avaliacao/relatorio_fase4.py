@@ -54,6 +54,7 @@ def _cabecalho(
     cfg: Config,
     janela: tuple[pd.Timestamp, pd.Timestamp],
     medida_referencia: validacao.Medida,
+    n_ligas: int,
     gerado_em: str,
 ) -> str:
     grupo1 = sorted(liberados.loc[liberados["grupo"] == "grupo1", "liga"].unique())
@@ -75,7 +76,7 @@ def _cabecalho(
             f"- Gerado em: {gerado_em}",
             "",
             "> **Regra 13.** Cada tabela diz de quais ligas fala. Onde não estiver",
-            "> escrito o contrário, o número é das **38 competições**, Grupo 1 e",
+            f"> escrito o contrário, o número é das **{n_ligas} competições**, Grupo 1 e",
             "> Grupo 2 juntos — o que vale para medir previsão, já que o Grupo 2",
             "> tem odd de fechamento. Aposta é outra história: ali valem só as 18",
             "> ligas aprovadas na Fase 2 (regra 12).",
@@ -124,7 +125,7 @@ funciona; prova que o código certo passa.
 
 
 def _secao_comparacao(
-    medidas: list[validacao.Medida], caminho_calibracao: Path, ligas: int
+    medidas: list[validacao.Medida], caminho_calibracao: Path, n_ligas: int
 ) -> str:
     tabela = relatorio.de_dataframe(
         pd.DataFrame([m.como_linha() for m in medidas]),
@@ -153,10 +154,52 @@ def _secao_comparacao(
     do_mercado = por_nome[NOME_MERCADO]
     distancia = melhor_modelo.log_loss - do_mercado.log_loss
 
+    # As frases abaixo dependem da ORDEM que saiu da medição, e por isso são
+    # montadas a partir dela. Um relatório que afirma "cada degrau é real" sem
+    # olhar os números é um relatório que um dia vai mentir.
+    escada = [
+        por_nome[nome]
+        for nome in ("baseline", "poisson", "dixon-coles")
+        if nome in por_nome
+    ]
+    subiu = all(
+        anterior.log_loss > seguinte.log_loss
+        for anterior, seguinte in zip(escada[:-1], escada[1:], strict=False)
+    )
+    leitura_escada = (
+        "**1. Cada degrau de modelo é real.** O baseline bate o chute uniforme "
+        "(sabe a estatística da liga), o Poisson bate o baseline (sabe quem "
+        "joga) e o Dixon-Coles bate o Poisson (sabe que placar baixo é diferente "
+        "e que jogo velho vale menos)."
+        if subiu
+        else (
+            "**1. A escada não subiu inteira.** A ordem medida foi: "
+            + ", ".join(
+                f"{m.nome} ({relatorio.num(m.log_loss)})"
+                for m in sorted(escada, key=lambda m: m.log_loss)
+            )
+            + ". Isso contraria o esperado e é motivo para conferir o código "
+            "antes de tirar conclusão."
+        )
+    )
+    leitura_mercado = (
+        f"**2. O mercado ganha, por {relatorio.num(distancia)} de log loss.** Era "
+        "o esperado — e a especificação já dizia que seria, antes de qualquer "
+        "conta."
+        if distancia > 0
+        else (
+            f"**2. ⚠️ O melhor modelo ficou À FRENTE do mercado, por "
+            f"{relatorio.num(-distancia)} de log loss.** Isso **não** é para "
+            "comemorar: o resultado esperado é o contrário, e a primeira "
+            "suspeita diante dele é vazamento de dados ou erro de cobertura de "
+            "odds — não talento. Confira antes de acreditar."
+        )
+    )
+
     return f"""## 2. A tabela da fase: os modelos contra o mercado
 
 As mesmas {relatorio.inteiro(medidas[0].n)} partidas para todo mundo, em
-{ligas} competições. Menor é melhor em log loss, Brier e ECE; maior é melhor em
+{n_ligas} competições. Menor é melhor em log loss, Brier e ECE; maior é melhor em
 acurácia.
 
 {tabela}
@@ -166,16 +209,11 @@ Referência: quem chuta 33% para cada opção tira log loss
 
 Três leituras, em ordem de importância:
 
-**1. Cada degrau de modelo é real.** O baseline bate o chute uniforme (sabe a
-estatística da liga), o Poisson bate o baseline (sabe quem joga) e o Dixon-Coles
-bate o Poisson (sabe que placar baixo é diferente e que jogo velho vale menos).
+{leitura_escada}
 
-**2. O mercado ganha, por {relatorio.num(distancia)} de log loss.** Era o
-esperado — e a especificação já dizia que seria, antes de qualquer conta. A odd
-de fechamento embute escalação, lesão, suspensão, clima e o dinheiro de milhares
-de apostadores profissionais. Um modelo que só lê placares não deveria vencer
-isso, e se vencesse a primeira suspeita certa seria vazamento no código, não
-talento.
+{leitura_mercado} A odd de fechamento embute escalação, lesão, suspensão, clima
+e o dinheiro de milhares de apostadores profissionais. Um modelo que só lê
+placares não deveria vencer isso.
 
 **3. A acurácia atrapalha mais do que ajuda.** Repare que ela varia pouco entre
 modelos muito diferentes: é que quase toda previsão de 1X2 aponta o mandante, e
@@ -525,9 +563,10 @@ def gerar(
 
     # -- gráficos ---------------------------------------------------------
     aviso("  desenhando os gráficos...")
+    n_ligas = int(alinhados[vencedor]["liga"].nunique())
     subtitulo = (
         f"walk-forward de {janela[0].date()} a {janela[1].date()} · "
-        f"{relatorio.inteiro(principais[0].n)} partidas · 38 competições"
+        f"{relatorio.inteiro(principais[0].n)} partidas · {n_ligas} competições"
     )
     caminho_calibracao = graficos.curva_calibracao(
         {m.nome: alinhados[m.nome] for m in principais},
@@ -569,10 +608,12 @@ def gerar(
 
     return "\n".join(
         [
-            _cabecalho(liberados, separacao, cfg, janela, principais[0], gerado_em),
+            _cabecalho(
+                liberados, separacao, cfg, janela, principais[0], n_ligas, gerado_em
+            ),
             "",
             _secao_metodo(exemplo),
-            _secao_comparacao(principais, caminho_calibracao, ligas=38),
+            _secao_comparacao(principais, caminho_calibracao, n_ligas),
             _secao_escolha(escolha, diferenca_segundo, cfg),
             _secao_parametros(varredura_xi, varredura_m, diferenca_decaimento),
             _secao_fator_casa(diferenca_casa, valor_unico),

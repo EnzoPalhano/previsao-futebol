@@ -219,9 +219,30 @@ def rodar_candidato(
     if aviso is not None:
         aviso(f"    {resultado.resumo()}")
 
-    caminho.parent.mkdir(parents=True, exist_ok=True)
-    resultado.previsoes.to_parquet(caminho)
+    _gravar_no_cache(resultado.previsoes, caminho)
     return resultado.previsoes
+
+
+def _gravar_no_cache(previsoes: pd.DataFrame, caminho: Path) -> None:
+    """Grava o cache de um jeito que sobrevive a um desligamento no meio.
+
+    A gravação vai primeiro para um arquivo ``.parcial`` ao lado do definitivo, e
+    só depois ele é **renomeado** — e renomear, no mesmo disco, é uma operação
+    que ou acontece inteira ou não acontece.
+
+    ⚠️ Sem isso, fechar o terminal no meio de uma gravação deixaria um parquet
+    truncado com o nome do arquivo bom. A execução seguinte o leria como "cache
+    pronto" e mediria tudo em cima de previsões pela metade — um erro que não dá
+    mensagem nenhuma, só números errados. É o mesmo cuidado que
+    :mod:`futebol.dados.download` toma com os CSVs baixados.
+    """
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    temporario = caminho.with_suffix(caminho.suffix + ".parcial")
+    try:
+        previsoes.to_parquet(temporario)
+        temporario.replace(caminho)
+    finally:
+        temporario.unlink(missing_ok=True)
 
 
 def rodar(

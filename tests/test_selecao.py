@@ -144,6 +144,38 @@ def test_forcar_ignora_o_cache(cfg_em_pasta_temporaria) -> None:
     assert any("medindo" in aviso for aviso in avisos)
 
 
+def test_gravacao_interrompida_nao_deixa_cache_pela_metade(tmp_path) -> None:
+    """Fechar o computador no meio da gravação não pode corromper o cache.
+
+    Um parquet truncado com o nome do arquivo bom seria lido, na próxima
+    execução, como "já medido" — e a fase inteira sairia de previsões pela
+    metade, sem nenhuma mensagem de erro.
+    """
+    destino = tmp_path / "previsoes.parquet"
+    previsoes = _previsoes(0.5)
+
+    class QuebraNoMeio(pd.DataFrame):
+        """Um DataFrame que falha na hora de gravar, como um desligamento."""
+
+        def to_parquet(self, *args, **kwargs):  # noqa: D102
+            raise KeyboardInterrupt("simulando o terminal sendo fechado")
+
+    with pytest.raises(KeyboardInterrupt):
+        selecao._gravar_no_cache(QuebraNoMeio(previsoes), destino)
+
+    assert not destino.exists(), "o cache bom não pode ter sido criado"
+    assert not list(tmp_path.glob("*.parcial")), "o arquivo temporário ficou para trás"
+
+
+def test_gravacao_completa_deixa_so_o_arquivo_bom(tmp_path) -> None:
+    destino = tmp_path / "previsoes.parquet"
+    selecao._gravar_no_cache(_previsoes(0.5), destino)
+
+    assert destino.is_file()
+    assert not list(tmp_path.glob("*.parcial"))
+    assert len(pd.read_parquet(destino)) == 200
+
+
 # ----------------------------------------------------------------------------
 # A escolha (regra 9)
 # ----------------------------------------------------------------------------
