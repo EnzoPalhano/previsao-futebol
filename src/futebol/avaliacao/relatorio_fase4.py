@@ -238,23 +238,33 @@ valor que não existe.
 """
 
 
+#: O que a Fase 3 deixou marcado como ``PROVISORIO`` no ``config.yaml``.
+#:
+#: ⚠️ Isto é um **fato histórico**, e por isso está fixo aqui em vez de ser lido
+#: do ``config.yaml``. A Fase 4 grava a escolha no config; se a comparação fosse
+#: contra o config, o relatório passaria a afirmar "nada mudou" exatamente depois
+#: de mudar — um texto que se torna falso por causa da própria ação que descreve.
+PROVISORIOS_DA_FASE_3 = {"xi": 0.0018, "m": 6.0}
+
+
 def _secao_escolha(
     escolha: selecao.Escolha,
     diferenca_segundo: validacao.Diferenca,
     cfg: Config,
+    n_com_mercado: int,
+    log_loss_com_mercado: float,
 ) -> str:
-    modelos = cfg.secao("modelos")
-    xi_atual = modelos["dixon_coles"]["xi"]
-    m_atual = modelos["shrinkage"]["jogos_equivalentes"]
+    xi_antigo = PROVISORIOS_DA_FASE_3["xi"]
+    m_antigo = PROVISORIOS_DA_FASE_3["m"]
     escolhidos = escolha.parametros
     mudou = (
-        escolhidos.get("xi", xi_atual) != xi_atual
-        or escolhidos.get("m", m_atual) != m_atual
+        escolhidos.get("xi", xi_antigo) != xi_antigo
+        or float(escolhidos.get("m", m_antigo)) != m_antigo
     )
     nota = (
-        "⚠️ A escolha **mudou** valores que estavam no `config.yaml` desde a "
-        "Fase 3. Os novos valores já estão gravados lá, e a marca `PROVISORIO` "
-        "saiu."
+        f"⚠️ A escolha **mudou** o que a Fase 3 tinha deixado provisório "
+        f"(`xi` {relatorio.num(xi_antigo, 4)}, `m` {m_antigo:.0f}). Os valores "
+        f"escolhidos foram gravados no `config.yaml`, e a marca `PROVISORIO` saiu."
         if mudou
         else (
             "A configuração escolhida é a que já estava no `config.yaml` desde a "
@@ -270,6 +280,16 @@ walk-forward e nos mesmos jogos. Venceu a de menor log loss:
 > **{escolha.vencedor.nome}** — log loss
 > **{relatorio.num(escolha.vencedor.log_loss)}**
 > Parâmetros: `{escolhidos}`
+
+⚠️ **Este número sai de um conjunto de jogos diferente do das outras tabelas, e
+por um motivo.** A escolha de modelo não pode depender de haver odd: ela é medida
+na interseção dos **{escolha.n_configuracoes} candidatos entre si**
+({relatorio.inteiro(escolha.vencedor.n)} jogos). Toda tabela que mostra o
+**mercado** ao lado dos modelos precisa exigir odd, e cai para
+{relatorio.inteiro(n_com_mercado)} jogos — é por isso que a mesma configuração
+aparece com {relatorio.num(log_loss_com_mercado)} na seção 4. As duas medidas são
+da mesma coisa em amostras diferentes; comparar números **entre** os dois
+conjuntos não vale.
 
 A margem sobre a segunda colocada foi de
 **{relatorio.num(escolha.margem, 5)}** de log loss. Medida jogo a jogo, com
@@ -586,8 +606,8 @@ def gerar(
     )
 
     # -- grades -----------------------------------------------------------
-    varredura_xi = _varredura_xi(cfg, por_nome, alinhados)
-    varredura_m = _varredura_encolhimento(cfg, por_nome)
+    varredura_xi = _varredura_xi(por_nome)
+    varredura_m = _varredura_encolhimento(por_nome)
     padrao_dc = "dixon-coles"
     diferenca_decaimento = validacao.comparar(
         alinhados["dc-xi-0.0"], alinhados[padrao_dc]
@@ -614,7 +634,13 @@ def gerar(
             "",
             _secao_metodo(exemplo),
             _secao_comparacao(principais, caminho_calibracao, n_ligas),
-            _secao_escolha(escolha, diferenca_segundo, cfg),
+            _secao_escolha(
+                escolha,
+                diferenca_segundo,
+                cfg,
+                n_com_mercado=int(por_nome[vencedor].n),
+                log_loss_com_mercado=por_nome[vencedor].log_loss,
+            ),
             _secao_parametros(varredura_xi, varredura_m, diferenca_decaimento),
             _secao_fator_casa(diferenca_casa, valor_unico),
             _secao_por_liga(tabela_ligas, vencedor, caminho_distancia, aprovadas),
@@ -623,13 +649,13 @@ def gerar(
     )
 
 
-def _varredura_xi(
-    cfg: Config,
-    por_nome: dict[str, validacao.Medida],
-    alinhados: dict[str, pd.DataFrame],
-) -> pd.DataFrame:
-    """A tabela da grade de ``xi``, incluindo o valor padrão do ``config.yaml``."""
-    xi_padrao = float(cfg.secao("modelos")["dixon_coles"]["xi"])
+def _varredura_xi(por_nome: dict[str, validacao.Medida]) -> pd.DataFrame:
+    """A tabela da grade de ``xi``, incluindo o ponto de partida da grade.
+
+    O ponto de partida vem de :data:`selecao.XI_DA_GRADE`, não do ``config.yaml``:
+    a grade medida é a de quando a fase rodou, e o config já guarda a escolha.
+    """
+    xi_padrao = selecao.XI_DA_GRADE
     linhas = []
     for xi in selecao.GRADE_XI:
         nome = "dixon-coles" if xi == xi_padrao else f"dc-xi-{xi}"
@@ -648,11 +674,9 @@ def _varredura_xi(
     return pd.DataFrame(linhas)
 
 
-def _varredura_encolhimento(
-    cfg: Config, por_nome: dict[str, validacao.Medida]
-) -> pd.DataFrame:
-    """A tabela da grade de encolhimento."""
-    m_padrao = float(cfg.secao("modelos")["shrinkage"]["jogos_equivalentes"])
+def _varredura_encolhimento(por_nome: dict[str, validacao.Medida]) -> pd.DataFrame:
+    """A tabela da grade de encolhimento, no ponto de partida da grade."""
+    m_padrao = selecao.M_DA_GRADE
     linhas = []
     for m in selecao.GRADE_ENCOLHIMENTO:
         nome = "dixon-coles" if m == m_padrao else f"dc-m-{m}"

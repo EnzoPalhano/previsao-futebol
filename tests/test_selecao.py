@@ -55,14 +55,36 @@ def test_sao_treze_configuracoes_distintas() -> None:
     assert len({c.nome for c in lista}) == 13, "nome repetido faria o cache colidir"
 
 
-def test_o_padrao_do_config_nao_e_contado_duas_vezes() -> None:
-    """O ``xi`` e o ``m`` do config.yaml já estão no candidato 'dixon-coles'."""
+def test_o_padrao_da_grade_nao_e_contado_duas_vezes() -> None:
+    """O ``xi`` e o ``m`` do ponto de partida já estão no candidato 'dixon-coles'."""
     cfg = carregar_config()
-    modelos = cfg.secao("modelos")
     nomes = {c.nome for c in selecao.candidatos(cfg, _tabela(), inicio="2019-09-01")}
 
-    assert f"dc-xi-{modelos['dixon_coles']['xi']}" not in nomes
-    assert f"dc-m-{modelos['shrinkage']['jogos_equivalentes']}" not in nomes
+    assert f"dc-xi-{selecao.XI_DA_GRADE}" not in nomes
+    assert f"dc-m-{selecao.M_DA_GRADE:.0f}" not in nomes
+
+
+def test_a_grade_nao_muda_quando_o_config_muda() -> None:
+    """A grade dos 13 candidatos é um fato histórico: não segue o ``config.yaml``.
+
+    Regressão da Fase 4 (regra 11). A fase termina gravando a escolha no config.
+    Enquanto a grade era montada a partir de lá, rodar a validação de novo depois
+    disso montava uma grade **diferente** — o encolhimento varrido em torno do
+    ``xi`` novo, e o nome ``dixon-coles`` apontando para outra configuração.
+    Seriam configurações novas disputando, com a contagem da regra 11 subindo sem
+    ninguém ver.
+    """
+    cfg = carregar_config()
+    jogos = _tabela()
+    antes = selecao.candidatos(cfg, jogos, inicio="2019-09-01")
+
+    modelos = cfg.secao("modelos")
+    modelos["dixon_coles"]["xi"] = 0.03
+    modelos["shrinkage"]["jogos_equivalentes"] = 99
+    depois = selecao.candidatos(cfg, jogos, inicio="2019-09-01")
+
+    assert [c.nome for c in antes] == [c.nome for c in depois]
+    assert [c.parametros for c in antes] == [c.parametros for c in depois]
 
 
 def test_todo_candidato_diz_quais_sao_os_parametros_dele() -> None:
@@ -92,13 +114,61 @@ def test_o_fator_casa_unico_sai_so_do_passado() -> None:
 # ----------------------------------------------------------------------------
 # O cache
 # ----------------------------------------------------------------------------
+def _candidato_fake(nome: str, **parametros: object) -> selecao.Candidato:
+    return selecao.Candidato(
+        nome=nome,
+        descricao="para o teste",
+        construir=lambda: Baseline(max_gols=6),
+        parametros=parametros,
+    )
+
+
 def test_o_cache_separa_janelas_diferentes(cfg_em_pasta_temporaria) -> None:
     """Previsões de janelas diferentes não podem cair no mesmo arquivo."""
     cfg = cfg_em_pasta_temporaria
-    um = selecao.caminho_do_cache(cfg, "dixon-coles", "2021-07-01", "2024-06-03")
-    outro = selecao.caminho_do_cache(cfg, "dixon-coles", "2022-07-01", "2024-06-03")
+    candidato = _candidato_fake("dixon-coles", modelo="dixon-coles", xi=0.003)
+    um = selecao.caminho_do_cache(cfg, candidato, "2021-07-01", "2024-06-03")
+    outro = selecao.caminho_do_cache(cfg, candidato, "2022-07-01", "2024-06-03")
     assert um != outro
     assert um.parent == selecao.pasta_do_cache(cfg)
+
+
+def test_o_cache_separa_parametros_diferentes_com_o_mesmo_nome(
+    cfg_em_pasta_temporaria,
+) -> None:
+    """O nome ``dixon-coles`` muda de significado quando o ``config.yaml`` muda.
+
+    Regressão da Fase 4: o candidato chamado ``dixon-coles`` é *o que tiver o
+    ``xi`` do config*. Com o cache guardado só pelo nome, gravar a escolha da
+    fase (``xi`` 0,0018 → 0,003) faria a execução seguinte ler as previsões
+    antigas achando que eram do valor novo — sem erro nenhum na tela.
+    """
+    cfg = cfg_em_pasta_temporaria
+    antes = _candidato_fake("dixon-coles", modelo="dixon-coles", xi=0.0018, m=6.0)
+    depois = _candidato_fake("dixon-coles", modelo="dixon-coles", xi=0.003, m=6.0)
+    janela = ("2021-07-01", "2024-06-03")
+
+    assert selecao.caminho_do_cache(cfg, antes, *janela) != selecao.caminho_do_cache(
+        cfg, depois, *janela
+    )
+
+
+def test_mesmos_parametros_com_nomes_diferentes_reaproveitam_o_cache(
+    cfg_em_pasta_temporaria,
+) -> None:
+    """``dc-xi-0.003`` e ``dixon-coles`` com xi=0,003 são a mesma medição.
+
+    O contrário do teste acima: se a assinatura fosse o nome, trocar o config
+    obrigaria a remedir horas de walk-forward que já estavam medidas.
+    """
+    cfg = cfg_em_pasta_temporaria
+    parametros = {"modelo": "dixon-coles", "xi": 0.003, "m": 6.0}
+    janela = ("2021-07-01", "2024-06-03")
+    um = selecao.caminho_do_cache(cfg, _candidato_fake("dixon-coles", **parametros), *janela)
+    outro = selecao.caminho_do_cache(cfg, _candidato_fake("dc-xi-0.003", **parametros), *janela)
+
+    assert selecao.marca_dos_parametros(parametros) in um.name
+    assert um.name.split("__")[-1] == outro.name.split("__")[-1]
 
 
 def test_segunda_rodada_le_do_cache(cfg_em_pasta_temporaria) -> None:

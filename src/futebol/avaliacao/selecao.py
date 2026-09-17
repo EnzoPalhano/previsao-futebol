@@ -23,14 +23,17 @@ a terceira casa decimal.
 
 **O cache.** Cada candidato custa alguns minutos de walk-forward, e a janela
 inteira dá mais de dez mil ajustes por candidato. As previsões de cada um são
-gravadas em ``data/processed/validacao/`` (fora do Git, regra 4), com a janela no
-nome do arquivo. Rodar de novo reaproveita o que já existe, e ``--forcar``
+gravadas em ``data/processed/validacao/`` (fora do Git, regra 4), com a janela e
+a assinatura dos parâmetros no nome do arquivo — nunca só o nome do candidato,
+que muda de significado quando o ``config.yaml`` muda. Rodar de novo reaproveita o que já existe, e ``--forcar``
 recalcula. Isso separa o que é caro (medir) do que é rápido (relatar e
 desenhar), e é o que permite ajustar o texto do relatório sem esperar meia hora.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -55,6 +58,19 @@ GRADE_XI: tuple[float, ...] = (0.0, 0.0005, 0.001, 0.0018, 0.003, 0.005)
 
 #: Valores de ``jogos_equivalentes`` (encolhimento) na grade oficial.
 GRADE_ENCOLHIMENTO: tuple[int, ...] = (1, 2, 6, 12, 20)
+
+#: O ponto em torno do qual a grade oficial foi montada — os valores que a Fase 3
+#: deixou no ``config.yaml`` marcados como ``PROVISORIO``.
+#:
+#: ⚠️ **Por que constantes, e não o ``config.yaml``.** A Fase 4 termina gravando
+#: a escolha no config. Se a grade fosse lida de lá, a execução seguinte montaria
+#: uma grade **diferente** da que foi medida: o encolhimento seria varrido em
+#: torno do ``xi`` novo, e ``dixon-coles`` passaria a nomear outra configuração.
+#: Seriam configurações novas disputando, e a contagem da regra 11 subiria sem
+#: ninguém perceber — que é exatamente o sobreajuste da validação que a regra 11
+#: existe para impedir. A grade de uma fase é um fato histórico: congela.
+XI_DA_GRADE = 0.0018
+M_DA_GRADE = 6.0
 
 
 @dataclass(frozen=True)
@@ -92,9 +108,8 @@ def candidatos(
     encolhimento e a variante de fator casa único. As repetições entre as grades
     e o padrão do ``config.yaml`` não são contadas duas vezes.
     """
-    modelos = cfg.secao("modelos")
-    xi_padrao = float(modelos["dixon_coles"]["xi"])
-    m_padrao = float(modelos["shrinkage"]["jogos_equivalentes"])
+    xi_padrao = XI_DA_GRADE
+    m_padrao = M_DA_GRADE
 
     # O "fator casa único" é medido uma vez, com o que se sabia no começo da
     # janela, e congelado. Medi-lo de novo a cada rodada exigiria reajustar as 38
@@ -114,13 +129,15 @@ def candidatos(
         Candidato(
             nome="poisson",
             descricao="ataque, defesa e fator casa por liga, sem decaimento",
-            construir=lambda: Poisson(cfg=cfg),
+            construir=lambda: Poisson(cfg=cfg, jogos_equivalentes=m_padrao),
             parametros={"modelo": "poisson", "m": m_padrao},
         ),
         Candidato(
             nome="dixon-coles",
             descricao=f"Poisson + placares baixos + decaimento (xi={xi_padrao})",
-            construir=lambda: DixonColes(cfg=cfg),
+            construir=lambda: DixonColes(
+                cfg=cfg, xi=xi_padrao, jogos_equivalentes=m_padrao
+            ),
             parametros={"modelo": "dixon-coles", "xi": xi_padrao, "m": m_padrao},
         ),
         Candidato(
@@ -130,7 +147,11 @@ def candidatos(
                 f"({fator_unico:.3f}), fixado antes da janela"
             ),
             construir=lambda: DixonColes(
-                cfg=cfg, fator_casa="global", valor_fator_casa=fator_unico
+                cfg=cfg,
+                xi=xi_padrao,
+                jogos_equivalentes=m_padrao,
+                fator_casa="global",
+                valor_fator_casa=fator_unico,
             ),
             parametros={
                 "modelo": "dixon-coles",
@@ -144,7 +165,9 @@ def candidatos(
         Candidato(
             nome=f"dc-xi-{xi}",
             descricao=f"Dixon-Coles com xi={xi}",
-            construir=lambda xi=xi: DixonColes(cfg=cfg, xi=xi),
+            construir=lambda xi=xi: DixonColes(
+                cfg=cfg, xi=xi, jogos_equivalentes=m_padrao
+            ),
             parametros={"modelo": "dixon-coles", "xi": xi, "m": m_padrao},
         )
         for xi in GRADE_XI
@@ -154,7 +177,7 @@ def candidatos(
         Candidato(
             nome=f"dc-m-{m}",
             descricao=f"Dixon-Coles com encolhimento m={m}",
-            construir=lambda m=m: DixonColes(cfg=cfg, jogos_equivalentes=m),
+            construir=lambda m=m: DixonColes(cfg=cfg, xi=xi_padrao, jogos_equivalentes=m),
             parametros={"modelo": "dixon-coles", "xi": xi_padrao, "m": m},
         )
         for m in GRADE_ENCOLHIMENTO
@@ -171,15 +194,36 @@ def pasta_do_cache(cfg: Config) -> Path:
     return cfg.raiz / "data" / "processed" / "validacao"
 
 
-def caminho_do_cache(cfg: Config, nome: str, inicio, fim) -> Path:
-    """Um arquivo por candidato **e por janela**.
+def marca_dos_parametros(parametros: dict[str, object]) -> str:
+    """Uma assinatura curta e estável dos parâmetros de um candidato.
+
+    ⚠️ **Por que isso existe.** O nome de um candidato depende do
+    ``config.yaml``: o candidato chamado ``dixon-coles`` é *aquele com o ``xi``
+    que estiver no config no momento*. Enquanto o cache era guardado só pelo
+    nome, mudar o ``xi`` no config fazia a execução seguinte **ler previsões do
+    ``xi`` antigo achando que eram do novo** — números errados, sem erro na tela.
+    Foi o que aconteceu ao gravar a escolha da Fase 4 (``xi`` 0,0018 → 0,003).
+
+    Guardando pelos parâmetros, duas configurações diferentes nunca disputam o
+    mesmo arquivo, e a mesma configuração reaproveita o cache mesmo que o nome
+    dela mude.
+    """
+    texto = json.dumps(parametros, sort_keys=True, default=str)
+    return hashlib.sha256(texto.encode("utf-8")).hexdigest()[:10]
+
+
+def caminho_do_cache(cfg: Config, candidato: Candidato, inicio, fim) -> Path:
+    """Um arquivo por **parâmetros**, por janela.
 
     A janela entra no nome porque previsões de janelas diferentes não podem ser
     comparadas entre si. Guardá-las no mesmo arquivo seria a forma mais fácil de
-    misturar duas medições e não perceber.
+    misturar duas medições e não perceber. Os parâmetros entram pelo mesmo
+    motivo, e o nome do candidato fica junto só para o arquivo ser legível — quem
+    decide qual arquivo é qual é a assinatura, nunca o nome.
     """
     marca = f"{pd.Timestamp(inicio).date()}_{pd.Timestamp(fim).date()}"
-    return pasta_do_cache(cfg) / f"{marca}__{nome}.parquet"
+    assinatura = marca_dos_parametros(candidato.parametros)
+    return pasta_do_cache(cfg) / f"{marca}__{candidato.nome}__{assinatura}.parquet"
 
 
 def rodar_candidato(
@@ -197,7 +241,7 @@ def rodar_candidato(
         As previsões, uma linha por jogo avaliado.
     """
     fim = pd.Timestamp(jogos["data"].max()) + pd.Timedelta(days=1) if fim is None else fim
-    caminho = caminho_do_cache(cfg, candidato.nome, inicio, fim)
+    caminho = caminho_do_cache(cfg, candidato, inicio, fim)
 
     if caminho.is_file() and not forcar:
         if aviso is not None:
