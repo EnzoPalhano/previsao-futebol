@@ -249,7 +249,8 @@ Não afeta os arquivos gravados. Se incomodar, rode `chcp 65001` antes.
 - [ ] o escolhido continua sendo `dc-xi-0.003` — a Fase 5 **não** muda o modelo
 - [ ] `docs\relatorios\fase5.md` existe, junto com
       `fase5_importancia.png`
-- [ ] o `config.yaml` **não mudou** nesta fase
+- [ ] no `config.yaml`, `xi` e `jogos_equivalentes` **não mudaram** — a única
+      linha nova da fase é a `vantagem_casa` do Elo, que é parâmetro de feature
 - [ ] `pytest` mostra **434 passed** (ou 433 passed + 1 skipped, se a sua rede
       bloquear o site da fonte — o teste de rede vira *skip*, e isso é esperado)
 - [ ] `ruff check .` mostra **All checks passed!**

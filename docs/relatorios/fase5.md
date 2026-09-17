@@ -31,9 +31,12 @@ entre os dois, medida jogo a jogo:
 
 **+0,00013 (IC 95%: -0,00075 a +0,00102; n = 36.413 jogos; menor efeito detectável nesta amostra: 0,00126) — indistinguível de zero**
 
-Então o modelo do projeto **não muda**. O `config.yaml` continua como a Fase 4 o
-deixou, e o LightGBM fica no repositório como o que ele é: uma hipótese que foi
-testada direito e não se sustentou.
+Então o modelo do projeto **não muda**: `xi`, `jogos_equivalentes` e o fator casa
+continuam exatamente como a Fase 4 os deixou. O único acréscimo ao `config.yaml`
+nesta fase foi a `vantagem_casa` do Elo (50 pontos), que é parâmetro de
+**feature** e não entra em nenhuma previsão oficial. O LightGBM fica no
+repositório como o que ele é: uma hipótese que foi testada direito e não se
+sustentou.
 
 ⚠️ **Isso não é um fracasso da fase; é o produto dela.** Uma fase que só
 pudesse terminar em "sim" não seria uma medição, seria uma encenação. O que se
@@ -177,7 +180,7 @@ independente diz que tirá-las custa log loss de verdade.
 
 ## O que muda no projeto
 
-**Nada no `config.yaml`.** O modelo oficial continua sendo
+**Nada nos parâmetros do modelo.** O modelo oficial continua sendo
 `dc-xi-0.003` — Dixon-Coles com `xi = 0,003` e `m = 6`, escolhido na
 Fase 4 pela regra 9 e confirmado aqui contra três adversários novos.
 
