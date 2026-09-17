@@ -86,13 +86,28 @@ ligas_aprovadas_backtest: [B1, D1, D2, E0, E1, E2, E3, F1, F2, G1, I1, I2, N1, P
 modelos:
   poisson:
     max_gols: 10                # tamanho da matriz de placares (0 a 10)
+    # "por_liga": cada liga estima o seu fator casa. "global": um numero so,
+    # medido em todas as ligas juntas. Comparacao em docs/relatorios/fase3.md.
+    fator_casa: por_liga
   dixon_coles:
     max_gols: 10
-    xi: 0.0018                  # decaimento temporal - ESCOLHER POR VALIDACAO, nao chutar
+    # Decaimento temporal, por dia. Meia-vida = ln(2)/xi ~ 385 dias.
+    # PROVISORIO: valor de partida da Fase 3. A escolha por walk-forward de
+    # validacao e da Fase 4 (regra 9) - nao pode ser chutado nem ajustado
+    # olhando o teste final.
+    xi: 0.0018
   elo:
     k: 20
     rating_inicial: 1500
-  shrinkage_time_novo: 0.5      # peso da media da liga para times com poucos jogos
+  # ENCOLHIMENTO (shrinkage) das forcas de ataque e defesa para a media da liga.
+  # jogos_equivalentes = quantos jogos de historia a media da liga vale:
+  #     forca do time ~ (n / (n + jogos_equivalentes)) * forca que os jogos dele pedem
+  # Com 6, um time com 6 jogos fica na metade do caminho entre "media da liga" e
+  # "o que os jogos dele dizem"; um time recem-promovido, sem jogo naquela
+  # divisao, e previsto como um time medio dela. Ver src/futebol/modelos/poisson.py.
+  # PROVISORIO na Fase 3, igual ao xi: quem escolhe e o walk-forward da Fase 4.
+  shrinkage:
+    jogos_equivalentes: 6
 
 # ----------------------------------------------------------------------------
 # BACKTEST
