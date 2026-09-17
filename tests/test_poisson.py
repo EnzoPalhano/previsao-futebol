@@ -21,61 +21,7 @@ from scipy.optimize import check_grad
 
 from futebol.modelos import base
 from futebol.modelos import poisson as P
-
-
-def _rodizio(times: list[str], voltas: int = 1) -> list[tuple[str, str]]:
-    """Todos contra todos, em casa e fora, repetido ``voltas`` vezes."""
-    return [
-        (casa, fora)
-        for _ in range(voltas)
-        for casa in times
-        for fora in times
-        if casa != fora
-    ]
-
-
-def _simular(
-    times: list[str],
-    ataque: dict[str, float],
-    defesa: dict[str, float],
-    intercepto: float = 0.1,
-    fator_casa: float = 0.25,
-    voltas: int = 6,
-    liga: str = "E0",
-    seed: int = 42,
-) -> pd.DataFrame:
-    """Sorteia placares a partir de forças conhecidas.
-
-    É o teste mais honesto que existe para um modelo de estimação: se os dados
-    vieram destes parâmetros, o ajuste tem que devolver estes parâmetros.
-    """
-    gerador = np.random.default_rng(seed)
-    confrontos = _rodizio(times, voltas)
-    lam = np.array(
-        [
-            np.exp(intercepto + ataque[casa] - defesa[fora] + fator_casa)
-            for casa, fora in confrontos
-        ]
-    )
-    mu = np.array(
-        [np.exp(intercepto + ataque[fora] - defesa[casa]) for casa, fora in confrontos]
-    )
-    return pd.DataFrame(
-        {
-            "data": pd.date_range("2019-08-01", periods=len(confrontos), freq="D"),
-            "liga": [liga] * len(confrontos),
-            "mandante": [c for c, _ in confrontos],
-            "visitante": [f for _, f in confrontos],
-            "gols_mandante": gerador.poisson(lam),
-            "gols_visitante": gerador.poisson(mu),
-        }
-    )
-
-
-#: Uma liga de seis times com forças conhecidas, do melhor para o pior.
-TIMES = [f"ENG:T{i}" for i in range(6)]
-ATAQUE = dict(zip(TIMES, [0.5, 0.3, 0.1, -0.1, -0.3, -0.5], strict=True))
-DEFESA = dict(zip(TIMES, [0.4, 0.2, 0.0, 0.0, -0.2, -0.4], strict=True))
+from simulacao import ATAQUE, DEFESA, TIMES, simular_liga
 
 
 # ----------------------------------------------------------------------------
@@ -88,7 +34,7 @@ def test_gradiente_analitico_bate_com_o_numerico() -> None:
     quebra nada: só faz o otimizador parar no lugar errado, com um modelo
     plausível e pior do que deveria ser.
     """
-    jogos = _simular(TIMES, ATAQUE, DEFESA, voltas=3)
+    jogos = simular_liga(TIMES, ATAQUE, DEFESA, voltas=3)
     times, indice_mandante, indice_visitante = P._indices_dos_times(jogos)
     gerador = np.random.default_rng(7)
     pesos = gerador.uniform(0.3, 1.0, len(jogos))
@@ -116,7 +62,7 @@ def test_gradiente_analitico_bate_com_o_numerico() -> None:
 # 2. O ajuste reencontra as forças que geraram os dados?
 # ----------------------------------------------------------------------------
 def test_recupera_as_forcas_que_geraram_os_placares() -> None:
-    jogos = _simular(TIMES, ATAQUE, DEFESA, voltas=12)
+    jogos = simular_liga(TIMES, ATAQUE, DEFESA, voltas=12)
     ajuste = P.ajustar_liga(jogos, "E0", jogos_equivalentes=6)
 
     assert ajuste.convergiu, ajuste.mensagem
@@ -129,7 +75,7 @@ def test_recupera_as_forcas_que_geraram_os_placares() -> None:
 
 def test_a_ordem_das_forcas_e_a_certa() -> None:
     """Mesmo com amostra menor, a ordem entre os times tem que sair certa."""
-    jogos = _simular(TIMES, ATAQUE, DEFESA, voltas=6)
+    jogos = simular_liga(TIMES, ATAQUE, DEFESA, voltas=6)
     tabela = P.ajustar_liga(jogos, "E0").tabela_de_forcas()
     assert list(tabela["time"]) == TIMES
 
@@ -142,7 +88,7 @@ def test_as_forcas_tem_media_zero() -> None:
     seria indeterminado — somar 1 a todos os ataques e 1 ao intercepto daria
     exatamente as mesmas previsões.
     """
-    ajuste = P.ajustar_liga(_simular(TIMES, ATAQUE, DEFESA), "E0")
+    ajuste = P.ajustar_liga(simular_liga(TIMES, ATAQUE, DEFESA), "E0")
     ataques = [forca.ataque for forca in ajuste.forcas.values()]
     defesas = [forca.defesa for forca in ajuste.forcas.values()]
     assert np.mean(ataques) == pytest.approx(0.0, abs=1e-3)
@@ -158,7 +104,7 @@ def test_time_com_poucos_jogos_fica_perto_da_media() -> None:
     Dois times fazem 5x0 em todos os seus jogos. Um deles jogou duas vezes, o
     outro jogou cinquenta. O modelo tem que acreditar muito mais no segundo.
     """
-    jogos = _simular(TIMES, ATAQUE, DEFESA, voltas=6)
+    jogos = simular_liga(TIMES, ATAQUE, DEFESA, voltas=6)
     estreante = pd.DataFrame(
         {
             "data": pd.to_datetime(["2020-05-01", "2020-05-08"]),
@@ -193,7 +139,7 @@ def test_time_com_poucos_jogos_fica_perto_da_media() -> None:
 
 
 def test_encolhimento_maior_puxa_mais_para_a_media() -> None:
-    jogos = _simular(TIMES, ATAQUE, DEFESA, voltas=2)
+    jogos = simular_liga(TIMES, ATAQUE, DEFESA, voltas=2)
     frouxo = P.ajustar_liga(jogos, "E0", jogos_equivalentes=1)
     apertado = P.ajustar_liga(jogos, "E0", jogos_equivalentes=200)
 
@@ -203,7 +149,7 @@ def test_encolhimento_maior_puxa_mais_para_a_media() -> None:
 
 def test_time_desconhecido_e_um_time_medio_da_liga() -> None:
     """Prever um time que não estava no treino não pode quebrar o app."""
-    ajuste = P.ajustar_liga(_simular(TIMES, ATAQUE, DEFESA), "E0")
+    ajuste = P.ajustar_liga(simular_liga(TIMES, ATAQUE, DEFESA), "E0")
     forca = ajuste.forca("ENG:NuncaVisto")
     assert (forca.ataque, forca.defesa, forca.jogos) == (0.0, 0.0, 0)
 
@@ -227,7 +173,7 @@ def test_fator_casa_global_e_a_razao_dos_gols() -> None:
 
 def test_fator_casa_fixo_nao_e_estimado() -> None:
     """A versão "fator casa constante" do experimento da Fase 3."""
-    jogos = _simular(TIMES, ATAQUE, DEFESA, fator_casa=0.40)
+    jogos = simular_liga(TIMES, ATAQUE, DEFESA, fator_casa=0.40)
     ajuste = P.ajustar_liga(jogos, "E0", fator_casa_fixo=0.10)
     assert ajuste.fator_casa == pytest.approx(0.10)
 
@@ -240,10 +186,10 @@ def test_cada_liga_estima_o_seu_fator_casa() -> None:
     sorte do sorteio. Estimar fator casa exige amostra — o que é, por si, uma
     informação útil sobre o experimento da Fase 3.
     """
-    com_vantagem = _simular(
+    com_vantagem = simular_liga(
         TIMES, ATAQUE, DEFESA, fator_casa=0.50, voltas=20, liga="BRA", seed=1
     )
-    sem_vantagem = _simular(
+    sem_vantagem = simular_liga(
         TIMES, ATAQUE, DEFESA, fator_casa=0.00, voltas=20, liga="JPN", seed=2
     )
     modelo = P.Poisson(max_gols=8).treinar(pd.concat([com_vantagem, sem_vantagem]))
@@ -257,8 +203,8 @@ def test_cada_liga_estima_o_seu_fator_casa() -> None:
 
 
 def test_modo_global_congela_o_mesmo_fator_nas_duas_ligas() -> None:
-    com_vantagem = _simular(TIMES, ATAQUE, DEFESA, fator_casa=0.50, liga="BRA", seed=1)
-    sem_vantagem = _simular(TIMES, ATAQUE, DEFESA, fator_casa=0.00, liga="JPN", seed=2)
+    com_vantagem = simular_liga(TIMES, ATAQUE, DEFESA, fator_casa=0.50, liga="BRA", seed=1)
+    sem_vantagem = simular_liga(TIMES, ATAQUE, DEFESA, fator_casa=0.00, liga="JPN", seed=2)
     jogos = pd.concat([com_vantagem, sem_vantagem])
     modelo = P.Poisson(max_gols=8, fator_casa="global").treinar(jogos)
 
@@ -302,7 +248,7 @@ def test_media_de_gols_invalida_e_recusada() -> None:
 
 
 def test_previsao_soma_um_e_nao_tem_negativo() -> None:
-    modelo = P.Poisson(max_gols=10).treinar(_simular(TIMES, ATAQUE, DEFESA))
+    modelo = P.Poisson(max_gols=10).treinar(simular_liga(TIMES, ATAQUE, DEFESA))
     previsao = modelo.prever(base.Jogo("E0", TIMES[0], TIMES[5]))
 
     for grupo in base.GRUPOS_COMPLEMENTARES:
@@ -311,7 +257,7 @@ def test_previsao_soma_um_e_nao_tem_negativo() -> None:
 
 
 def test_o_time_mais_forte_em_casa_e_favorito() -> None:
-    modelo = P.Poisson(max_gols=10).treinar(_simular(TIMES, ATAQUE, DEFESA))
+    modelo = P.Poisson(max_gols=10).treinar(simular_liga(TIMES, ATAQUE, DEFESA))
     forte_em_casa = modelo.prever(base.Jogo("E0", TIMES[0], TIMES[5]))
     fraco_em_casa = modelo.prever(base.Jogo("E0", TIMES[5], TIMES[0]))
 
@@ -322,7 +268,7 @@ def test_o_time_mais_forte_em_casa_e_favorito() -> None:
 
 
 def test_ao_contrario_do_baseline_a_previsao_depende_dos_times() -> None:
-    modelo = P.Poisson(max_gols=10).treinar(_simular(TIMES, ATAQUE, DEFESA))
+    modelo = P.Poisson(max_gols=10).treinar(simular_liga(TIMES, ATAQUE, DEFESA))
     um = modelo.prever(base.Jogo("E0", TIMES[0], TIMES[5]))
     outro = modelo.prever(base.Jogo("E0", TIMES[2], TIMES[3]))
     assert um["H"] > outro["H"] + 0.1
@@ -332,15 +278,15 @@ def test_ao_contrario_do_baseline_a_previsao_depende_dos_times() -> None:
 # 6. Erros e bordas
 # ----------------------------------------------------------------------------
 def test_liga_fora_do_treino_diz_quais_existem() -> None:
-    modelo = P.Poisson(max_gols=8).treinar(_simular(TIMES, ATAQUE, DEFESA))
+    modelo = P.Poisson(max_gols=8).treinar(simular_liga(TIMES, ATAQUE, DEFESA))
     with pytest.raises(base.ErroDeModelo, match="E0"):
         modelo.prever(base.Jogo("SP1", "ESP:Barcelona", "ESP:Real Madrid"))
 
 
 def test_cada_liga_e_ajustada_com_os_jogos_dela_so() -> None:
     """Forças de ligas diferentes não são comparáveis; misturá-las corromperia."""
-    inglaterra = _simular(TIMES, ATAQUE, DEFESA, liga="E0", seed=1)
-    espanha = _simular(
+    inglaterra = simular_liga(TIMES, ATAQUE, DEFESA, liga="E0", seed=1)
+    espanha = simular_liga(
         [f"ESP:T{i}" for i in range(6)],
         dict(zip([f"ESP:T{i}" for i in range(6)], [0.0] * 6, strict=True)),
         dict(zip([f"ESP:T{i}" for i in range(6)], [0.0] * 6, strict=True)),
@@ -354,14 +300,14 @@ def test_cada_liga_e_ajustada_com_os_jogos_dela_so() -> None:
 
 
 def test_numero_errado_de_pesos_e_recusado() -> None:
-    jogos = _simular(TIMES, ATAQUE, DEFESA, voltas=1)
+    jogos = simular_liga(TIMES, ATAQUE, DEFESA, voltas=1)
     with pytest.raises(base.ErroDeModelo, match="peso"):
         P.ajustar_liga(jogos, "E0", pesos=np.ones(3))
 
 
 def test_peso_zero_apaga_o_jogo() -> None:
     """A base do decaimento temporal: peso é o quanto o jogo ainda conta."""
-    jogos = _simular(TIMES, ATAQUE, DEFESA, voltas=4)
+    jogos = simular_liga(TIMES, ATAQUE, DEFESA, voltas=4)
     absurdo = pd.DataFrame(
         {
             "data": [jogos["data"].max() + pd.Timedelta(days=1)],
@@ -386,8 +332,8 @@ def test_resumo_tem_uma_linha_por_liga() -> None:
     modelo = P.Poisson(max_gols=8).treinar(
         pd.concat(
             [
-                _simular(TIMES, ATAQUE, DEFESA, liga="E0", seed=1),
-                _simular(TIMES, ATAQUE, DEFESA, liga="SP1", seed=2),
+                simular_liga(TIMES, ATAQUE, DEFESA, liga="E0", seed=1),
+                simular_liga(TIMES, ATAQUE, DEFESA, liga="SP1", seed=2),
             ]
         )
     )

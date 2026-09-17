@@ -292,6 +292,10 @@ class Modelo(ABC):
         #: Data do jogo mais recente que entrou no treino. Serve de
         #: conferência: ela nunca pode alcançar o ``ate_data`` pedido.
         self.ultima_data_de_treino: pd.Timestamp | None = None
+        #: O ``ate_data`` pedido no treino, quando houve um. É a "data de hoje"
+        #: do ponto de vista do modelo, e é dela que o decaimento temporal do
+        #: Dixon-Coles conta para trás.
+        self.corte_de_treino: pd.Timestamp | None = None
 
     # -- treino ------------------------------------------------------------
     def treinar(self, jogos: pd.DataFrame, ate_data=None) -> Modelo:
@@ -312,6 +316,7 @@ class Modelo(ABC):
         if usados.empty:
             fim = f" antes de {pd.Timestamp(ate_data).date()}." if ate_data else "."
             raise ErroDeModelo("Nenhum jogo sobrou para treinar" + fim)
+        self.corte_de_treino = pd.Timestamp(ate_data) if ate_data is not None else None
         self._ajustar(usados)
         self._treinado = True
         self.ultima_data_de_treino = pd.Timestamp(usados["data"].max())
