@@ -91,11 +91,11 @@ modelos:
     fator_casa: por_liga
   dixon_coles:
     max_gols: 10
-    # Decaimento temporal, por dia. Meia-vida = ln(2)/xi ~ 385 dias.
-    # PROVISORIO: valor de partida da Fase 3. A escolha por walk-forward de
-    # validacao e da Fase 4 (regra 9) - nao pode ser chutado nem ajustado
-    # olhando o teste final.
-    xi: 0.0018
+    # Decaimento temporal, por dia. Meia-vida = ln(2)/xi ~ 231 dias.
+    # ESCOLHIDO pelo walk-forward de validacao da Fase 4 (regra 9), em
+    # 17/09/2026: menor log loss entre as 13 configuracoes candidatas.
+    # Ver docs/relatorios/fase4.md, secao 4. Nao mexer olhando o teste final.
+    xi: 0.003
   elo:
     k: 20
     rating_inicial: 1500
@@ -105,7 +105,9 @@ modelos:
   # Com 6, um time com 6 jogos fica na metade do caminho entre "media da liga" e
   # "o que os jogos dele dizem"; um time recem-promovido, sem jogo naquela
   # divisao, e previsto como um time medio dela. Ver src/futebol/modelos/poisson.py.
-  # PROVISORIO na Fase 3, igual ao xi: quem escolhe e o walk-forward da Fase 4.
+  # ESCOLHIDO pelo walk-forward da Fase 4 (regra 9): m = 6 tem a menor log
+  # loss da grade (1, 2, 6, 12, 20), com a curva rasa na vizinhanca. O valor
+  # e o mesmo que a Fase 3 usava; a diferenca e que agora foi medido.
   shrinkage:
     jogos_equivalentes: 6
 
