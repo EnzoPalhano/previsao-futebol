@@ -35,6 +35,8 @@ time promovido. É a mesma escolha de chave do :mod:`futebol.modelos.elo`.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -332,6 +334,55 @@ def construir(
 
     if probabilidades_dc is not None:
         features[list(COLUNAS_DC)] = probabilidades_dc.reindex(jogos.index)
+    return features
+
+
+def caminho_do_cache(cfg: Config, jogos: pd.DataFrame) -> Path:
+    """Onde as features desta tabela ficam guardadas, fora do Git (regra 4).
+
+    ⚠️ A chave é uma **descrição da tabela**: primeira data, última data e número
+    de jogos. Se qualquer uma mudar, o arquivo é outro e as features são
+    recalculadas. É deliberadamente conservador — recalcular custa 40 segundos, e
+    ler features de uma tabela diferente custaria um relatório inteiro errado,
+    do jeito silencioso que a Fase 4 já mostrou ser possível.
+    """
+    primeira = pd.Timestamp(jogos["data"].min()).date()
+    ultima = pd.Timestamp(jogos["data"].max()).date()
+    pasta = cfg.raiz / "data" / "processed" / "features"
+    return pasta / f"{primeira}_{ultima}_{len(jogos)}.parquet"
+
+
+def carregar_ou_construir(
+    cfg: Config, jogos: pd.DataFrame, forcar: bool = False, aviso=None
+) -> pd.DataFrame:
+    """As features da tabela, lidas do cache ou calculadas e gravadas.
+
+    A parte cara é a do Dixon-Coles (um ajuste por liga por marco). O resto leva
+    segundos.
+    """
+    caminho = caminho_do_cache(cfg, jogos)
+    if caminho.is_file() and not forcar:
+        if aviso is not None:
+            aviso(f"  features: lidas do cache ({caminho.name})")
+        guardadas = pd.read_parquet(caminho)
+        if list(guardadas.columns) == nomes_das_features():
+            return guardadas.reindex(jogos.index)
+        if aviso is not None:
+            aviso("  features: o cache tem outras colunas; recalculando")
+
+    if aviso is not None:
+        aviso("  features: calculando (a parte do Dixon-Coles leva ~1 min)...")
+    probabilidades = probabilidades_do_dixon_coles(jogos, cfg, aviso=aviso)
+    features = construir(jogos, cfg=cfg, probabilidades_dc=probabilidades)
+    features = features[nomes_das_features()]
+
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    temporario = caminho.with_suffix(caminho.suffix + ".parcial")
+    try:
+        features.to_parquet(temporario)
+        temporario.replace(caminho)
+    finally:
+        temporario.unlink(missing_ok=True)
     return features
 
 

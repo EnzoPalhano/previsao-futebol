@@ -250,6 +250,12 @@ class FabricaGBM:
             "modelo": "gbm",
             "passo_retreino": self.passo_dias,
             "features": len(self.colunas),
+            # Distingue a variante que recebe a leitura do Dixon-Coles da que
+            # tem de se virar sozinha — é a comparação que responde se o GBM
+            # acrescenta algo ou só copia o modelo de gols.
+            "com_dixon_coles": any(
+                coluna.startswith("dc_") for coluna in self.colunas
+            ),
             **{
                 chave: valor
                 for chave, valor in self.hiperparametros.items()

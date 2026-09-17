@@ -186,6 +186,77 @@ def candidatos(
     return lista
 
 
+#: Quantas configurações a grade congelada da Fase 4 mede. A Fase 5 **soma** a
+#: este número; ele nunca é substituído (regra 11).
+N_CONFIGURACOES_FASE_4 = 13
+
+
+def candidatos_fase5(
+    cfg: Config, features: pd.DataFrame, jogos: pd.DataFrame | None = None
+) -> list[Candidato]:
+    """As configurações que a Fase 5 acrescenta à disputa.
+
+    São **três**, e a conta de por que só três é a mesma da Fase 4: cada
+    configuração testada é uma chance a mais de a melhor estar na frente por
+    acaso (regra 11). Cada uma responde a uma pergunta diferente, e nenhuma
+    existe para raspar decimal:
+
+    - ``gbm`` — o modelo completo. *As features pagam?*
+    - ``gbm-sem-dc`` — o mesmo, sem as quatro colunas do Dixon-Coles. *O GBM
+      acrescenta alguma coisa, ou só está copiando o modelo de gols?* É a
+      pergunta mais informativa da fase: se as duas variantes empatarem, o
+      Dixon-Coles não estava ajudando; se a sem-DC despencar, o que o GBM sabe
+      vem quase todo dele;
+    - ``gbm-raso`` — árvores pequenas e folhas grandes. *Ele está decorando?*
+      Resultado de futebol é quase todo ruído, e a variante regularizada é a
+      forma de descobrir isso com número em vez de opinião.
+
+    Args:
+        cfg: configuração do projeto.
+        features: a saída de
+            :func:`futebol.features.construtor.carregar_ou_construir`, já
+            calculada para a tabela inteira.
+        jogos: opcional, só para permitir prever um jogo avulso pelo nome dos
+            times. O walk-forward não precisa.
+    """
+    from futebol.features import construtor
+    from futebol.modelos.gbm import FabricaGBM
+
+    sem_dc = [c for c in features.columns if not c.startswith("dc_")]
+
+    def fabrica(colunas: list[str], **hiper) -> FabricaGBM:
+        return FabricaGBM(features[colunas], cfg=cfg, chaves=jogos, **hiper)
+
+    completas = list(construtor.nomes_das_features())
+    variantes = [
+        ("gbm", "LightGBM de gols, com as 23 features", fabrica(completas), ),
+        (
+            "gbm-sem-dc",
+            "o mesmo, sem as quatro colunas do Dixon-Coles",
+            fabrica(sem_dc),
+        ),
+        (
+            "gbm-raso",
+            "LightGBM mais regularizado (folhas grandes, árvore rasa)",
+            fabrica(completas, num_leaves=8, min_child_samples=200),
+        ),
+    ]
+    return [
+        Candidato(
+            nome=nome,
+            descricao=descricao,
+            construir=fab.novo,
+            # ⚠️ "tudo": o GBM é um modelo global, treinado com as 38
+            # competições juntas. Com escopo "liga" ele veria só a competição
+            # da vez, e um modelo de aprendizado com um trinta e oito avos dos
+            # dados não é o modelo que se quer medir.
+            escopo="tudo",
+            parametros=fab.parametros,
+        )
+        for nome, descricao, fab in variantes
+    ]
+
+
 # ----------------------------------------------------------------------------
 # Cache
 # ----------------------------------------------------------------------------

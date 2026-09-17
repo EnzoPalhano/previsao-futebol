@@ -28,6 +28,7 @@ from futebol import relatorio
 from futebol.avaliacao import divisao, selecao, validacao
 from futebol.config import carregar_config
 from futebol.dados import limpeza
+from futebol.features import construtor
 from futebol.terminal import preparar_saida
 
 
@@ -47,6 +48,14 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="mede apenas o candidato com este nome (ex.: dixon-coles)",
     )
+    parser.add_argument(
+        "--com-gbm",
+        action="store_true",
+        help=(
+            "acrescenta as 3 configuracoes de LightGBM da Fase 5 a disputa. "
+            "Exige construir as features (~1 min na primeira vez)."
+        ),
+    )
     args = parser.parse_args(argv)
 
     cfg = carregar_config()
@@ -65,6 +74,12 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Janela de validacao: {pd.Timestamp(args.inicio).date()} a {fim.date()}")
 
     lista = selecao.candidatos(cfg, liberados, args.inicio)
+    if args.com_gbm:
+        # As features sao calculadas sobre a tabela LIBERADA inteira, e nao so
+        # sobre a janela: a forma recente de um jogo de julho de 2021 mora nos
+        # jogos de junho, que estao fora da janela mas sao passado dele.
+        features = construtor.carregar_ou_construir(cfg, liberados, aviso=print)
+        lista = lista + selecao.candidatos_fase5(cfg, features, jogos=liberados)
     if args.so_um is not None:
         lista = [c for c in lista if c.nome == args.so_um]
         if not lista:
