@@ -88,9 +88,18 @@ Agora rode a validação com o modelo novo incluído:
 python scripts\validar.py --com-gbm
 ```
 
-**Demora.** Na primeira vez são uns 15 minutos: ele precisa montar as features
-(~1 minuto) e medir as três configurações de LightGBM (~4 minutos cada). As 13
-configurações da Fase 4 já estão guardadas e são lidas na hora.
+**Na sua máquina isso leva ~2 segundos.** A medição pesada já foi feita e está
+guardada em `data\processed\` — o comando lê de lá e mostra a tabela na hora.
+Ver a tabela aparecer instantaneamente é o comportamento **certo**, não um sinal
+de que algo foi pulado.
+
+Os 15 minutos aparecem só para quem começar do zero (por exemplo, clonando o
+repositório noutro computador): a pasta `data/` não vai para o Git, então lá ele
+precisa montar as features (~1 min) e medir as três configurações de LightGBM
+(~4 min cada). Se quiser ver isso acontecer de verdade, use `--forcar`.
+
+Tempos com o cache pronto, medidos: `validar.py --com-gbm` 2 s,
+`relatorio_fase5.py` 3 s, `pytest` 22 s.
 
 Quando terminar, gere o relatório:
 
@@ -297,7 +306,7 @@ apostado de verdade nas temporadas de validação:
 4. **o CLV** — se a odd em que o projeto apostou era melhor que a odd de
    fechamento. É o sinal mais confiável de que há vantagem real, e não sorte.
 
-⚠️ Aviso desde já, para a expectativa ficar calibrada: o modelo está **0,0228**
+⚠️ Aviso desde já, para a expectativa ficar calibrada: o modelo está **0,0226**
 de log loss atrás do mercado. Não é provável que a Fase 6 mostre lucro. O
 objetivo dela é medir isso com honestidade — inclusive se a resposta for
 desagradável.
