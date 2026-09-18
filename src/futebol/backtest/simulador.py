@@ -100,6 +100,7 @@ COLUNAS_DA_APOSTA: tuple[str, ...] = (
     "ev",
     "ganhou",
     "retorno_unitario",
+    "prob_justa",
     "odd_fech",
     "prob_fech",
     "clv",
@@ -214,6 +215,10 @@ def _candidatos(
     justas = {
         nome: _probabilidades_justas(jogos, nome, metodo) for nome in ("1x2", "ou25")
     }
+    justas_pre = {
+        nome: _probabilidades_justas(jogos, nome, metodo, momento="pre")
+        for nome in ("1x2", "ou25")
+    }
 
     partes = []
     for selecao in SELECOES:
@@ -223,6 +228,7 @@ def _candidatos(
         ganhou = aconteceu[selecao.chave]
         indice = _indice_da_selecao(selecao)
         prob_fech = justas[selecao.mercado][:, indice]
+        prob_justa = justas_pre[selecao.mercado][:, indice]
 
         parte = pd.DataFrame(
             {
@@ -241,6 +247,9 @@ def _candidatos(
                 "ganhou": ganhou,
                 # O lucro de apostar 1 unidade: ganha odd−1, perde 1.
                 "retorno_unitario": np.where(ganhou, odd - 1.0, -1.0),
+                # A estimativa do mercado no momento da aposta, sem a comissão.
+                # `1/odd - prob_justa` é o que a casa cobrou nesta seleção.
+                "prob_justa": prob_justa,
                 "odd_fech": odd_fech,
                 "prob_fech": prob_fech,
                 # CLV: o valor esperado da aposta medido com a probabilidade
@@ -281,16 +290,25 @@ def _o_que_aconteceu(jogos: pd.DataFrame) -> dict[str, np.ndarray]:
 
 
 def _probabilidades_justas(
-    jogos: pd.DataFrame, nome_mercado: str, metodo: str
+    jogos: pd.DataFrame, nome_mercado: str, metodo: str, momento: str = "fech"
 ) -> np.ndarray:
-    """As probabilidades do **fechamento**, já sem a margem da casa.
+    """As probabilidades do mercado, já sem a margem da casa.
 
-    Elas não escolhem aposta nenhuma: servem só para medir CLV. A remoção da
-    margem é feita sobre o grupo inteiro (as três odds do 1X2 juntas, as duas do
-    Over/Under juntas), porque margem é uma propriedade do mercado, não de uma
-    odd sozinha.
+    Elas não escolhem aposta nenhuma. Servem para duas medições:
+
+    - ``momento="fech"`` — o **CLV**, que compara o preço pego com a estimativa
+      final do mercado;
+    - ``momento="pre"`` — a **margem** embutida no preço em que se apostou. É o
+      que a Fase 7 precisa para mostrar a comissão acumulada de uma múltipla:
+      dividir a probabilidade implícita (``1/odd``) pela justa dá exatamente o
+      quanto a casa cobrou naquela seleção, e numa múltipla esses fatores se
+      **multiplicam**.
+
+    A remoção da margem é feita sobre o grupo inteiro (as três odds do 1X2
+    juntas, as duas do Over/Under juntas), porque margem é uma propriedade do
+    mercado, não de uma odd sozinha.
     """
-    odds = mercado.odds_da_tabela(jogos, nome_mercado, "fech")
+    odds = mercado.odds_da_tabela(jogos, nome_mercado, momento)
     justas = np.full_like(odds, np.nan, dtype=float)
     completas = np.isfinite(odds).all(axis=1)
     if completas.any():
