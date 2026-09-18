@@ -66,7 +66,8 @@ Os guias completos, escritos para quem nunca programou:
 [Fase 2 — medindo o adversário](docs/guias/GUIA_FASE_2.md),
 [Fase 3 — o primeiro modelo](docs/guias/GUIA_FASE_3.md),
 [Fase 4 — a hora da verdade](docs/guias/GUIA_FASE_4.md) e
-[Fase 5 — quando a resposta é "não"](docs/guias/GUIA_FASE_5.md).
+[Fase 5 — quando a resposta é "não"](docs/guias/GUIA_FASE_5.md) e
+[Fase 6 — teria dado lucro?](docs/guias/GUIA_FASE_6.md).
 
 ---
 
@@ -89,7 +90,8 @@ Os guias completos, escritos para quem nunca programou:
 | Gerar o relatório da Fase 4 | `python scripts/relatorio_fase4.py` |
 | Validar incluindo o LightGBM | `python scripts/validar.py --com-gbm` |
 | Gerar o relatório da Fase 5 | `python scripts/relatorio_fase5.py` |
-| Rodar o backtest | `python scripts/backtest.py` *(Fase 6)* |
+| Rodar o backtest | `python scripts/backtest.py` |
+| Gerar o relatório da Fase 6 | `python scripts/relatorio_fase6.py` |
 | Abrir o app | `streamlit run src/futebol/app/streamlit_app.py` *(Fase 8)* |
 
 ---
@@ -164,6 +166,32 @@ o modelo de verdade — 61% do que ele usa para decidir vem de lá. Ele não des
 sobre futebol que o modelo de gols não soubesse; redescobriu o modelo de gols, com mais
 peças móveis. O código fica no repositório, pronto para a Fase 7, quando entrar
 informação que o placar não tem.
+
+---
+
+## O backtest: teria dado lucro?
+
+Não. A [Fase 6](docs/relatorios/fase6.md) simulou **21.682 apostas** nas 18 ligas
+aprovadas, entre julho de 2021 e junho de 2024, sempre na odd média pré-jogo:
+
+| | Resultado |
+|---|---|
+| ROI | **−12,92%** (IC 95%: −14,97% a −10,89%) |
+| CLV — o critério primário | **−7,82%** (IC 95%: −7,95% a −7,69%) |
+| Ligas com ROI positivo | **0 de 18** |
+| Temporadas com ROI positivo | **0 de 3** |
+| Menor efeito que a amostra enxerga | 2,03% de ROI — o medido é seis vezes maior |
+
+A amostra é quatro vezes o mínimo exigido, então a conclusão **não** é "amostra
+insuficiente": é que não há vantagem, medida com folga.
+
+**O achado da fase é outro, e é mais interessante que o veredito.** Apostar **ao acaso**
+entre as mesmas oportunidades dá ROI de −6,88% — quase metade do prejuízo. O filtro de
+valor esperado escolhe **pior que o chute**, e dá para explicar por quê: como
+`EV = probabilidade × odd − 1` é multiplicativo na odd, um mesmo erro do modelo produz EV
+alto no azarão e quase nada no favorito. E o azarão é justamente onde a casa cobra mais
+(2% de comissão em odd 1,5, mais de 21% acima de odd 10). Com um modelo atrás do mercado,
+o filtro de EV não é um filtro de qualidade — é um **amplificador do erro do modelo**.
 
 ---
 
