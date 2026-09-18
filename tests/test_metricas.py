@@ -168,3 +168,116 @@ def test_simulacao_nunca_sorteia_opcao_inexistente() -> None:
     """Arredondamento no acumulado já produziu índice 3 num mercado de 3 opções."""
     quase_certo = np.tile([1.0, 0.0, 0.0], (500, 1))
     assert np.isfinite(metricas.piso_de_ruido_ece(quase_certo, repeticoes=10))
+
+
+# ----------------------------------------------------------------------------
+# Poder estatistico (Fase 6)
+# ----------------------------------------------------------------------------
+def test_desvio_padrao_da_aposta_bate_com_a_secao_8_1() -> None:
+    """Odd 2,00 -> 1,0 (100% de volatilidade por aposta); odd 3,00 -> 1,41."""
+    assert metricas.desvio_padrao_da_aposta(2.0) == pytest.approx(1.0)
+    assert metricas.desvio_padrao_da_aposta(3.0) == pytest.approx(1.4142, abs=1e-4)
+
+
+def test_desvio_padrao_da_aposta_e_a_conta_exata_de_uma_odd_justa() -> None:
+    """Confere a formula simulando: p = 1/odd, retorno odd-1 ou -1."""
+    odd = 4.0
+    gerador = np.random.default_rng(0)
+    ganhou = gerador.random(400_000) < 1 / odd
+    retornos = np.where(ganhou, odd - 1.0, -1.0)
+    assert retornos.std(ddof=1) == pytest.approx(
+        metricas.desvio_padrao_da_aposta(odd), rel=0.01
+    )
+
+
+def test_tamanho_amostra_reproduz_a_tabela_da_especificacao() -> None:
+    """ROI verdadeiro de 2% em odd media 2,00 pede ~9.600 apostas."""
+    n = metricas.tamanho_amostra(0.02, metricas.desvio_padrao_da_aposta(2.0))
+    assert n == pytest.approx(9604, rel=0.01)
+
+
+def test_tamanho_amostra_na_odd_alta_pede_o_dobro() -> None:
+    """A outra linha da tabela: 2% em odd 3,00 pede ~19.100."""
+    n = metricas.tamanho_amostra(0.02, metricas.desvio_padrao_da_aposta(3.0))
+    assert n == pytest.approx(19_208, rel=0.01)
+
+
+def test_detectar_efeito_menor_custa_o_quadrado() -> None:
+    """Metade do efeito, quatro vezes a amostra. E o que torna ROI inviavel."""
+    grande = metricas.tamanho_amostra(0.04, 1.0)
+    pequeno = metricas.tamanho_amostra(0.02, 1.0)
+    assert pequeno == pytest.approx(4 * grande)
+
+
+def test_efeito_zero_nunca_e_detectavel() -> None:
+    assert metricas.tamanho_amostra(0.0, 1.0) == float("inf")
+
+
+def test_efeito_detectavel_e_o_inverso_de_tamanho_amostra() -> None:
+    """As duas funcoes sao a mesma conta resolvida para variaveis diferentes."""
+    n = metricas.tamanho_amostra(0.03, 1.2)
+    assert metricas.efeito_detectavel(int(round(n)), 1.2) == pytest.approx(0.03, rel=1e-3)
+
+
+def test_o_poder_de_80_por_cento_exige_efeito_maior() -> None:
+    """2,8 erros-padrao contra 1,96: perguntas diferentes, numeros diferentes."""
+    apareceu = metricas.efeito_detectavel(1000, 1.0, metricas.Z_95)
+    teria_visto = metricas.efeito_detectavel(1000, 1.0, metricas.Z_PODER_80)
+    assert teria_visto > apareceu
+
+
+def test_efeito_detectavel_sem_amostra_e_indefinido() -> None:
+    assert math.isnan(metricas.efeito_detectavel(0, 1.0))
+
+
+# ----------------------------------------------------------------------------
+# Bootstrap
+# ----------------------------------------------------------------------------
+def test_bootstrap_cobre_a_media_verdadeira() -> None:
+    gerador = np.random.default_rng(1)
+    valores = gerador.normal(0.05, 1.0, 5000)
+    baixo, alto = metricas.bootstrap_ic(valores, amostras=2000)
+    assert baixo < valores.mean() < alto
+
+
+def test_bootstrap_encolhe_com_a_amostra() -> None:
+    gerador = np.random.default_rng(2)
+    pequena = gerador.normal(0.0, 1.0, 200)
+    grande = gerador.normal(0.0, 1.0, 20_000)
+
+    estreito = np.diff(metricas.bootstrap_ic(grande, amostras=1000))[0]
+    largo = np.diff(metricas.bootstrap_ic(pequena, amostras=1000))[0]
+    assert estreito < largo / 5
+
+
+def test_bootstrap_aguenta_a_distribuicao_torta_de_uma_aposta() -> None:
+    """Pilha de -1 com alguns +9: nada parecido com uma normal, e tudo bem."""
+    retornos = np.where(np.arange(2000) % 10 == 0, 9.0, -1.0)
+    baixo, alto = metricas.bootstrap_ic(retornos, amostras=1000)
+    assert baixo < 0.0 < alto
+
+
+def test_bootstrap_e_reproduzivel() -> None:
+    valores = np.random.default_rng(3).normal(0, 1, 500)
+    assert metricas.bootstrap_ic(valores, amostras=500, seed=9) == (
+        metricas.bootstrap_ic(valores, amostras=500, seed=9)
+    )
+
+
+def test_bootstrap_de_uma_observacao_so_nao_existe() -> None:
+    baixo, alto = metricas.bootstrap_ic([0.5])
+    assert math.isnan(baixo) and math.isnan(alto)
+
+
+def test_bootstrap_ignora_valores_faltando() -> None:
+    """Aposta sem odd de fechamento nao tem CLV, e nao pode virar zero."""
+    com_buraco = np.array([0.1, np.nan, 0.1, 0.1, np.nan, 0.1])
+    baixo, alto = metricas.bootstrap_ic(com_buraco, amostras=200)
+    assert baixo == pytest.approx(0.1) and alto == pytest.approx(0.1)
+
+
+def test_bootstrap_de_amostra_grande_nao_estoura_a_memoria() -> None:
+    """Cem mil apostas x dez mil repeticoes seriam um bilhao de numeros."""
+    valores = np.random.default_rng(4).normal(0, 1, 100_000)
+    baixo, alto = metricas.bootstrap_ic(valores, amostras=2000)
+    assert baixo < 0.0 < alto

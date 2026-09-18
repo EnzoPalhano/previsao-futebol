@@ -86,3 +86,15 @@ def de_dataframe(
         linhas.append(celulas)
 
     return tabela_markdown(linhas, list(colunas.values()))
+
+
+def dinheiro(valor: float) -> str:
+    """Reais no padrão brasileiro: ``1.000,00``. Vazio vira ``-``.
+
+    Existe porque :func:`num` não põe separador de milhar e :func:`inteiro` não
+    põe centavos — e uma banca de mil reais escrita ``1000,00`` num relatório em
+    português parece um erro de digitação.
+    """
+    if valor is None or pd.isna(valor):
+        return "-"
+    return f"{valor:,.2f}".replace(",", "\x00").replace(".", ",").replace("\x00", ".")

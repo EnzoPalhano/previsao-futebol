@@ -241,3 +241,168 @@ def piso_de_ruido_ece(
         )
         medidas.append(ece(completas, simulado, faixas))
     return float(np.mean(medidas))
+
+
+# ----------------------------------------------------------------------------
+# Poder estatístico e incerteza
+# ----------------------------------------------------------------------------
+# Esta seção existe por causa da regra 10, e ela é o coração honesto da Fase 6.
+#
+# Um ROI sozinho não quer dizer nada. "+2,1% de ROI" pode ser uma vantagem real
+# ou o resultado de jogar uma moeda algumas centenas de vezes. O que separa os
+# dois casos não é o número: é **quanto ruído cabe naquela amostra**. As funções
+# abaixo respondem as duas perguntas que precisam acompanhar todo ROI e todo CLV
+# do projeto:
+#
+# - *quantas apostas seriam necessárias para enxergar um efeito deste tamanho?*
+#   (:func:`tamanho_amostra`);
+# - *com as apostas que eu tenho, qual é o menor efeito que eu enxergaria?*
+#   (:func:`efeito_detectavel`).
+#
+# As duas são a mesma conta, resolvida para variáveis diferentes.
+
+#: Multiplicador de 95% de confiança: o intervalo é a estimativa ± 1,96 erros-padrão.
+#: Responde "este efeito **apareceu**?".
+Z_95 = 1.959963984540054
+
+#: Multiplicador de 95% de confiança **com 80% de poder**. Responde a outra
+#: pergunta: "esta amostra teria boa chance de **ver** um efeito deste tamanho,
+#: se ele existisse?". É o número usado em
+#: :attr:`futebol.avaliacao.validacao.Diferenca.efeito_minimo_detectavel`.
+#:
+#: ⚠️ Os dois convivem e não se contradizem. Um efeito entre 1,96 e 2,8
+#: erros-padrão é um achado **frágil**: apareceu, mas a amostra tinha boa chance
+#: de não tê-lo visto.
+Z_PODER_80 = 2.8
+
+#: Quantos números o bootstrap sorteia por bloco. Segura o pico de memória em
+#: torno de 80 MB, independente do tamanho da amostra.
+_NUMEROS_POR_BLOCO = 10_000_000
+
+
+def desvio_padrao_da_aposta(odd: float) -> float:
+    """Volatilidade de uma aposta de 1 unidade numa odd justa: ``√(odd − 1)``.
+
+    É a conta da seção 8.1 da especificação, e ela é **exata** (não uma
+    aproximação) quando a odd é justa, isto é, quando ``p = 1/odd``. Nesse caso
+    o retorno vale ``odd − 1`` com probabilidade ``1/odd`` e ``−1`` com o resto,
+    tem média zero e variância::
+
+        (1/odd)·(odd−1)² + (1 − 1/odd)·1² = odd − 1
+
+    Como ler o número: odd 2,00 dá desvio-padrão **1,0** — ou seja, **100% de
+    volatilidade por aposta**. Odd 5,00 dá 2,0. É por isso que ROI precisa de
+    dezenas de milhares de apostas para ser medido e log loss não (regra 9):
+    cada aposta carrega uma quantidade absurda de ruído, e a log loss usa a
+    probabilidade inteira de **todos** os jogos, não só o que deu certo.
+
+    ⚠️ Esta função serve para **planejar** (a tabela da seção 8.2 sai dela). Para
+    reportar o que de fato aconteceu, o projeto usa o desvio-padrão **medido**
+    nos próprios retornos, que é o que a seção 8.3 exige para o CLV.
+    """
+    if odd <= 1:
+        raise ValueError(f"Odd tem de ser maior que 1; veio {odd}.")
+    return float(np.sqrt(odd - 1.0))
+
+
+def tamanho_amostra(efeito: float, desvio_padrao: float, z: float = Z_95) -> float:
+    """Quantas apostas seriam necessárias para enxergar um efeito deste tamanho.
+
+    A fórmula da seção 8.2 da especificação::
+
+        n ≈ ( z · desvio_padrão / efeito )²
+
+    Args:
+        efeito: o efeito verdadeiro que se quer detectar, na mesma unidade dos
+            retornos (ROI de 2% = ``0.02``).
+        desvio_padrao: volatilidade de uma aposta. Use
+            :func:`desvio_padrao_da_aposta` para planejar ou o desvio medido
+            para reportar.
+        z: ``Z_95`` (o padrão) responde "quantas apostas para o IC 95% não
+            cruzar o zero"; ``Z_PODER_80`` responde "quantas para eu ter 80% de
+            chance de ver o efeito".
+
+    Retorna:
+        O número de apostas. Vem como ``float`` de propósito: arredondar para
+        cima é decisão de quem usa, e o número costuma ser grande demais para a
+        última casa importar.
+
+    Exemplo — a linha da tabela da especificação (ROI verdadeiro de 2% em odd
+    média 2,00) dá cerca de 9.600 apostas.
+    """
+    if efeito == 0:
+        return float("inf")
+    if desvio_padrao < 0:
+        raise ValueError(f"Desvio-padrão não pode ser negativo; veio {desvio_padrao}.")
+    return float((z * desvio_padrao / abs(efeito)) ** 2)
+
+
+def efeito_detectavel(n: int, desvio_padrao: float, z: float = Z_95) -> float:
+    """O menor efeito que **esta** amostra conseguiria enxergar.
+
+    É :func:`tamanho_amostra` resolvida para o outro lado::
+
+        efeito ≈ z · desvio_padrão / √n
+
+    É o número que a regra 10 manda publicar ao lado de todo ROI e todo CLV.
+    Sem ele, "não houve vantagem" fica indistinguível de "não dava para saber",
+    e as duas frases significam coisas muito diferentes.
+
+    Args:
+        n: número de apostas.
+        desvio_padrao: o desvio-padrão **medido** dos retornos.
+        z: ver :func:`tamanho_amostra`.
+    """
+    if n <= 0:
+        return float("nan")
+    return float(z * desvio_padrao / np.sqrt(n))
+
+
+def bootstrap_ic(
+    valores,
+    confianca: float = 0.95,
+    amostras: int = 10_000,
+    seed: int = 42,
+) -> tuple[float, float]:
+    """Intervalo de confiança da média por bootstrap (regra 10 e regra 2.6c).
+
+    Bootstrap é a ideia de reamostrar **os próprios dados**, com reposição, mil
+    vezes, e olhar como a média balança. A vantagem sobre a fórmula normal é não
+    supor forma nenhuma para a distribuição — e a distribuição de lucro de
+    aposta é tudo menos normal: é uma pilha de ``−1`` com alguns ``+4`` no meio,
+    torta e de cauda pesada. Com poucas apostas em odd alta, o intervalo normal
+    mente; o bootstrap não.
+
+    Args:
+        valores: os retornos, um por aposta.
+        confianca: 0,95 dá o intervalo de 2,5% a 97,5%.
+        amostras: quantas reamostragens. 10.000 é o padrão do ``config.yaml``.
+        seed: semente fixa — dois relatórios do mesmo dado dão o mesmo intervalo.
+
+    Retorna:
+        ``(limite inferior, limite superior)``. Com menos de duas observações
+        volta ``(nan, nan)``: intervalo de uma amostra só não existe.
+    """
+    valores = np.asarray(valores, dtype=float)
+    valores = valores[np.isfinite(valores)]
+    if len(valores) < 2:
+        return (float("nan"), float("nan"))
+
+    gerador = np.random.default_rng(seed)
+    # Sortear de uma vez uma matriz (amostras x n) troca dez mil laços de Python
+    # por uma operação de NumPy — mas com cem mil apostas e dez mil repetições
+    # essa matriz teria um bilhão de números e não caberia na memória. Daí os
+    # blocos: vetorizado o suficiente para ser rápido, pequeno o suficiente para
+    # caber. O resultado é idêntico ao da matriz inteira.
+    por_bloco = max(1, _NUMEROS_POR_BLOCO // len(valores))
+    medias = np.empty(amostras, dtype=float)
+    feitas = 0
+    while feitas < amostras:
+        agora = min(por_bloco, amostras - feitas)
+        sorteios = gerador.integers(0, len(valores), size=(agora, len(valores)))
+        medias[feitas : feitas + agora] = valores[sorteios].mean(axis=1)
+        feitas += agora
+
+    resto = (1.0 - confianca) / 2.0
+    baixo, alto = np.quantile(medias, [resto, 1.0 - resto])
+    return (float(baixo), float(alto))
