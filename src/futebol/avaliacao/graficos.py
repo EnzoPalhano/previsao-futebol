@@ -336,3 +336,165 @@ def importancia_das_features(
         loc="lower right",
     )
     return _salvar(figura, destino)
+
+
+# ----------------------------------------------------------------------------
+# 4. A banca e o lucro acumulado (Fase 6)
+# ----------------------------------------------------------------------------
+#: O piso do eixo da banca, em reais. Banca que chega a zero não tem lugar num
+#: eixo logarítmico, e o eixo precisa ser logarítmico (ver `evolucao_da_banca`).
+PISO_DA_BANCA = 1.0
+
+
+def ate_o_piso(bancas) -> int:
+    """Quantos pontos da curva da banca cabem no gráfico.
+
+    Devolve o índice logo após o primeiro dia em que a banca cai abaixo de
+    :data:`PISO_DA_BANCA` — ou o tamanho inteiro, se ela nunca cair.
+
+    ⚠️ **Por que a curva para em vez de ser achatada contra o piso.** Num eixo
+    logarítmico o zero não existe, então uma banca que acabou precisa ir para
+    algum lugar. Encostá-la no piso desenharia uma linha reta em R$ 1,00 por
+    dois anos — uma afirmação **falsa** sobre o que aconteceu. Parar a curva e
+    marcar o ponto com um ``x`` diz a verdade: daqui em diante não há mais o que
+    mostrar.
+    """
+    bancas = np.asarray(bancas, dtype=float)
+    abaixo = np.flatnonzero(bancas < PISO_DA_BANCA)
+    return int(abaixo[0]) + 1 if len(abaixo) else len(bancas)
+
+
+def evolucao_da_banca(
+    evolucoes: dict,
+    destino: Path,
+    banca_inicial: float = 1000.0,
+    titulo: str = "O que aconteceu com a banca",
+    subtitulo: str = "",
+) -> Path:
+    """Uma curva por combinação de estratégia e tipo de banca.
+
+    Args:
+        evolucoes: ``{rótulo: Evolucao}``, de
+            :func:`futebol.backtest.estrategias.simular_banca`.
+        destino: caminho do PNG.
+        banca_inicial: de onde as curvas partem.
+
+    ⚠️ **O eixo é logarítmico, e isso é uma decisão, não um detalhe.** Num eixo
+    linear, uma banca que cai de 1.000 para 10 e outra que cai para 0,10 são a
+    mesma linha colada no chão — e a diferença entre elas é de duas ordens de
+    grandeza. O que interessa numa banca é sempre a variação **relativa**: perder
+    metade é perder metade, partindo de 1.000 ou de 50. O eixo log mostra isso e
+    o linear esconde.
+
+    O preço dessa escolha é que o zero não existe no eixo log. Banca que quebra é
+    desenhada até :data:`PISO_DA_BANCA` e marcada com um ``x`` — a curva não
+    "termina", ela **acaba**, e a marca diz isso.
+    """
+    figura, eixo = _eixos(altura=5.0)
+    desenhadas = 0
+
+    for posicao, (rotulo, evolucao) in enumerate(evolucoes.items()):
+        curva = evolucao.curva
+        if curva.empty:
+            continue
+        # A curva para no primeiro dia em que a banca cai abaixo do piso. Não é
+        # censura: é que abaixo de um real a curva não cabe no eixo, e achatá-la
+        # contra o piso desenharia uma linha reta que parece "a banca ficou
+        # parada em R$ 1,00 por dois anos" — uma afirmação falsa. O `x` marca
+        # onde ela saiu do gráfico.
+        bancas = curva["banca"].to_numpy(float)
+        ate = ate_o_piso(bancas)
+        acabou = ate < len(bancas) or bancas[-1] < PISO_DA_BANCA
+
+        # A primeira data entra duas vezes para a curva começar na banca
+        # inicial. O recorte `[:1]` (em vez de `[curva["data"].iloc[0]]`)
+        # preserva o tipo datetime64: uma lista com um Timestamp dentro vira
+        # array de objetos, e aí o eixo de datas do matplotlib estoura.
+        datas_do_dia = curva["data"].to_numpy()[:ate]
+        datas = np.concatenate([datas_do_dia[:1], datas_do_dia])
+        valores = np.concatenate(
+            [[banca_inicial], np.maximum(bancas[:ate], PISO_DA_BANCA)]
+        )
+        cor = PALETA[posicao % len(PALETA)]
+        eixo.plot(datas, valores, color=cor, linewidth=1.6, label=rotulo)
+        desenhadas += 1
+        if acabou or evolucao.quebrou:
+            eixo.plot(
+                [datas[-1]], [valores[-1]], marker="x", color=cor, markersize=9,
+                markeredgewidth=2.0,
+            )
+
+    eixo.axhline(
+        banca_inicial, color=TINTA_SECUNDARIA, linewidth=1.0, linestyle="--"
+    )
+    eixo.set_yscale("log")
+    eixo.yaxis.set_major_formatter(
+        FuncFormatter(lambda valor, _: f"{valor:,.0f}".replace(",", "."))
+    )
+    eixo.set_ylabel("banca (R$, escala logarítmica)", color=TINTA, fontsize=10)
+    eixo.set_title(titulo, color=TINTA, fontsize=12, loc="left", pad=22)
+    if subtitulo:
+        eixo.text(
+            0.0, 1.012, subtitulo, transform=eixo.transAxes,
+            color=TINTA_SECUNDARIA, fontsize=9,
+        )
+    if desenhadas:
+        eixo.legend(frameon=False, fontsize=9, labelcolor=TINTA, loc="upper right")
+    figura.autofmt_xdate()
+    return _salvar(figura, destino)
+
+
+def lucro_acumulado(
+    series: dict,
+    destino: Path,
+    titulo: str = "Lucro acumulado, em apostas de 1 unidade",
+    subtitulo: str = "",
+) -> Path:
+    """O lucro somado ao longo do tempo, com stake constante de 1 unidade.
+
+    Args:
+        series: ``{rótulo: DataFrame com as colunas ``data`` e
+            ``retorno_unitario``}``.
+        destino: caminho do PNG.
+
+    **Por que este gráfico existe ao lado do da banca.** A banca responde "o que
+    teria acontecido com o meu dinheiro", e por isso ela quebra, raciona stake e
+    depende da política de aposta. Esta curva tira o dinheiro do caminho: stake
+    de 1 unidade sempre, nada quebra, e o que sobra é só a **qualidade das
+    escolhas** ao longo dos três anos. É aqui que dá para ver se a perda foi um
+    tombo num mês ruim ou uma ladeira constante — e a diferença entre as duas
+    coisas é a diferença entre azar e ausência de vantagem.
+    """
+    figura, eixo = _eixos(altura=5.0)
+    desenhadas = 0
+
+    for posicao, (rotulo, apostas) in enumerate(series.items()):
+        if apostas.empty:
+            continue
+        desenhadas += 1
+        por_dia = (
+            apostas.groupby("data")["retorno_unitario"].sum().sort_index().cumsum()
+        )
+        eixo.plot(
+            por_dia.index.to_numpy(),
+            por_dia.to_numpy(),
+            color=PALETA[posicao % len(PALETA)],
+            linewidth=1.6,
+            label=rotulo,
+        )
+
+    eixo.axhline(0.0, color=TINTA_SECUNDARIA, linewidth=1.0)
+    eixo.yaxis.set_major_formatter(
+        FuncFormatter(lambda valor, _: f"{valor:,.0f}".replace(",", "."))
+    )
+    eixo.set_ylabel("lucro acumulado (unidades apostadas)", color=TINTA, fontsize=10)
+    eixo.set_title(titulo, color=TINTA, fontsize=12, loc="left", pad=22)
+    if subtitulo:
+        eixo.text(
+            0.0, 1.012, subtitulo, transform=eixo.transAxes,
+            color=TINTA_SECUNDARIA, fontsize=9,
+        )
+    if desenhadas:
+        eixo.legend(frameon=False, fontsize=9, labelcolor=TINTA, loc="lower left")
+    figura.autofmt_xdate()
+    return _salvar(figura, destino)
