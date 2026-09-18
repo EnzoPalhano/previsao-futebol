@@ -32,9 +32,9 @@ existe (ou não) vantagem sobre o mercado.
 | 3 | Modelos de Poisson e Dixon-Coles | ✅ concluída |
 | 4 | Avaliação honesta (walk-forward) | ✅ concluída |
 | 5 | Features e machine learning | ✅ concluída |
-| 6 | Backtest de apostas | ⏳ próxima |
-| 7 | Múltiplas e cash out | — |
-| 8 | Aplicativo Streamlit | — |
+| 6 | Backtest de apostas | ✅ concluída |
+| 7 | Múltiplas e cash out | ✅ concluída |
+| 8 | Aplicativo Streamlit | ⏳ próxima |
 | 9 | Teste final | — |
 | 10 | Notícias e desfalques | — |
 
@@ -66,8 +66,9 @@ Os guias completos, escritos para quem nunca programou:
 [Fase 2 — medindo o adversário](docs/guias/GUIA_FASE_2.md),
 [Fase 3 — o primeiro modelo](docs/guias/GUIA_FASE_3.md),
 [Fase 4 — a hora da verdade](docs/guias/GUIA_FASE_4.md) e
-[Fase 5 — quando a resposta é "não"](docs/guias/GUIA_FASE_5.md) e
-[Fase 6 — teria dado lucro?](docs/guias/GUIA_FASE_6.md).
+[Fase 5 — quando a resposta é "não"](docs/guias/GUIA_FASE_5.md),
+[Fase 6 — teria dado lucro?](docs/guias/GUIA_FASE_6.md) e
+[Fase 7 — por que a casa adora múltiplas](docs/guias/GUIA_FASE_7.md).
 
 ---
 
@@ -92,6 +93,7 @@ Os guias completos, escritos para quem nunca programou:
 | Gerar o relatório da Fase 5 | `python scripts/relatorio_fase5.py` |
 | Rodar o backtest | `python scripts/backtest.py` |
 | Gerar o relatório da Fase 6 | `python scripts/relatorio_fase6.py` |
+| Gerar o relatório da Fase 7 | `python scripts/relatorio_fase7.py` |
 | Abrir o app | `streamlit run src/futebol/app/streamlit_app.py` *(Fase 8)* |
 
 ---
@@ -164,8 +166,8 @@ que é a pergunta da Fase 6.
 indistinguível de zero, e tirar as probabilidades do Dixon-Coles das features dele piora
 o modelo de verdade — 61% do que ele usa para decidir vem de lá. Ele não descobriu nada
 sobre futebol que o modelo de gols não soubesse; redescobriu o modelo de gols, com mais
-peças móveis. O código fica no repositório, pronto para a Fase 7, quando entrar
-informação que o placar não tem.
+peças móveis. O código fica no repositório, pronto para a **Fase 10**, quando entrar
+informação que o placar não tem — desfalque, escalação, notícia.
 
 ---
 
@@ -192,6 +194,35 @@ valor esperado escolhe **pior que o chute**, e dá para explicar por quê: como
 alto no azarão e quase nada no favorito. E o azarão é justamente onde a casa cobra mais
 (2% de comissão em odd 1,5, mais de 21% acima de odd 10). Com um modelo atrás do mercado,
 o filtro de EV não é um filtro de qualidade — é um **amplificador do erro do modelo**.
+
+---
+
+## Múltiplas: a lupa do erro
+
+A [Fase 7](docs/relatorios/fase7.md) montou **36.211 bilhetes** de 2 a 10 seleções nas
+mesmas rodadas, com no máximo uma seleção por jogo:
+
+| Jogos no bilhete | Comissão acumulada da casa | Equivale a, por jogo |
+|---|---|---|
+| 2 | 9,1% | 4,47% |
+| 5 | 24,3% | 4,44% |
+| 10 | **54,0%** | 4,41% |
+
+A comissão **por jogo** é constante: o que cresce é o efeito de cobrá-la várias vezes, uma
+em cima da outra. Um bilhete de dez jogos custa 1,54 vez o que ele vale, e isso não
+depende de modelo nenhum.
+
+**A surpresa da fase foi o que ela *não* encontrou.** A especificação esperava achar
+correlação entre jogos — o produto simples das probabilidades superestimando a chance de
+bilhetes grandes. Refazendo a conta com as probabilidades justas do mercado, ela
+**acerta**: o intervalo de confiança contém o zero nos nove tamanhos. O desvio observado é
+outra coisa — é o erro do modelo em **cada seleção** (ele exagera 4,1% por perna) elevado
+à potência do tamanho do bilhete, o que dá 28,5% num bilhete de oito. **A múltipla
+funciona como uma lupa do erro do modelo.**
+
+E o cash out cobra a mesma taxa não importa quando é apertado: o valor esperado de sacar é
+o de não sacar vezes `(1 − taxa)`, para qualquer momento de saque. Isso é uma identidade,
+não um achado empírico.
 
 ---
 
