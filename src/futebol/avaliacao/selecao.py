@@ -423,3 +423,42 @@ def escolher(
             ordenadas[1].log_loss - vencedor.log_loss if len(ordenadas) > 1 else float("nan")
         ),
     )
+
+
+# ----------------------------------------------------------------------------
+# O modelo oficial, para quem só quer usá-lo
+# ----------------------------------------------------------------------------
+def candidato_oficial(
+    cfg: Config, jogos: pd.DataFrame, inicio=INICIO_VALIDACAO
+) -> Candidato:
+    """O candidato que corresponde ao que está gravado no ``config.yaml``.
+
+    A Fase 6 em diante não disputa modelo: usa o escolhido. Esta função é a ponte
+    entre "o que o config diz" e "qual arquivo de cache é esse".
+
+    ⚠️ **Por que ela procura na grade em vez de montar um candidato novo.** O
+    cache é um arquivo por (janela, nome, assinatura dos parâmetros). Montar aqui
+    um candidato chamado ``oficial`` com os mesmos parâmetros daria a **mesma**
+    assinatura e um **nome** diferente — ou seja, um arquivo novo, e uma hora de
+    walk-forward para recalcular previsões idênticas às que já estão no disco.
+    Procurando pelos parâmetros, o modelo oficial é reconhecido como o candidato
+    da grade que ele de fato é, e o cache da Fase 4 é reaproveitado.
+
+    Se algum dia o ``config.yaml`` apontar para uma configuração fora da grade
+    congelada, o candidato é construído na hora — com o nome carregando os dois
+    parâmetros, para nunca colidir com um da grade.
+    """
+    xi = float(cfg.bruto["modelos"]["dixon_coles"]["xi"])
+    m = float(cfg.bruto["modelos"]["shrinkage"]["jogos_equivalentes"])
+    procurado = {"modelo": "dixon-coles", "xi": xi, "m": m}
+
+    for candidato in candidatos(cfg, jogos, inicio):
+        if candidato.parametros == procurado:
+            return candidato
+
+    return Candidato(
+        nome=f"dc-xi-{xi}-m-{m:g}",
+        descricao=f"Dixon-Coles oficial do config.yaml (xi={xi}, m={m:g})",
+        construir=lambda: DixonColes(cfg=cfg, xi=xi, jogos_equivalentes=m),
+        parametros=procurado,
+    )
