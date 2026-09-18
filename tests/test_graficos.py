@@ -179,3 +179,43 @@ def test_o_lucro_acumulado_aguenta_serie_vazia(tmp_path) -> None:
     vazia = pd.DataFrame({"data": pd.to_datetime([]), "retorno_unitario": []})
     destino = graficos.lucro_acumulado({"vazia": vazia}, tmp_path / "vazio.png")
     assert destino.is_file()
+
+
+# ----------------------------------------------------------------------------
+# Os graficos da Fase 7
+# ----------------------------------------------------------------------------
+def _por_tamanho() -> pd.DataFrame:
+    tamanhos = np.arange(2, 11)
+    margem_por_selecao = 0.044
+    return pd.DataFrame(
+        {
+            "tamanho": tamanhos,
+            "margem": (1 + margem_por_selecao) ** tamanhos - 1,
+            "margem_por_selecao": np.full(len(tamanhos), margem_por_selecao),
+            "prevista_modelo": 0.6**tamanhos,
+            "prevista_mercado": 0.58**tamanhos,
+            "real": 0.58**tamanhos,
+        }
+    )
+
+
+def test_o_grafico_da_margem_e_escrito(tmp_path) -> None:
+    destino = graficos.margem_da_multipla(_por_tamanho(), tmp_path / "margem.png")
+    assert destino.is_file() and destino.stat().st_size > 1000
+
+
+def test_o_grafico_de_previsto_contra_real_e_escrito(tmp_path) -> None:
+    destino = graficos.previsto_contra_real(
+        _por_tamanho(), tmp_path / "previsto.png"
+    )
+    assert destino.is_file() and destino.stat().st_size > 1000
+
+
+def test_o_previsto_contra_real_usa_escala_log(tmp_path) -> None:
+    """Numa escala linear, tudo de cinco selecoes em diante vira uma linha no zero.
+
+    A pergunta da fase e justamente a distancia entre previsto e real nesses
+    tamanhos, e ela sumiria.
+    """
+    tabela = _por_tamanho()
+    assert tabela["prevista_modelo"].iloc[-1] < tabela["prevista_modelo"].iloc[0] / 50

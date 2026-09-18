@@ -498,3 +498,107 @@ def lucro_acumulado(
         eixo.legend(frameon=False, fontsize=9, labelcolor=TINTA, loc="lower left")
     figura.autofmt_xdate()
     return _salvar(figura, destino)
+
+
+# ----------------------------------------------------------------------------
+# 5. As multiplas (Fase 7)
+# ----------------------------------------------------------------------------
+def margem_da_multipla(
+    tabela: pd.DataFrame,
+    destino: Path,
+    titulo: str = "Quanto a casa cobra, por tamanho de bilhete",
+    subtitulo: str = "",
+) -> Path:
+    """A comissão acumulada medida, contra a curva que a aritmética prevê.
+
+    Args:
+        tabela: saída de :func:`futebol.backtest.multiplas.medir_por_tamanho`.
+        destino: caminho do PNG.
+
+    Duas séries de propósito: os pontos são o que foi **medido** nos bilhetes, e
+    a linha é ``(1 + m)ⁿ − 1`` com o ``m`` por seleção estimado dos próprios
+    dados. Quando as duas coincidem, o gráfico está dizendo que não há mistério
+    nenhum aqui — a comissão de uma múltipla é a de cada perna, multiplicada.
+    Um gráfico que mostrasse só os pontos deixaria o leitor achando que a curva
+    é uma descoberta empírica, quando ela é uma conta de juros compostos.
+    """
+    tamanhos = tabela["tamanho"].to_numpy(float)
+    por_selecao = float(tabela["margem_por_selecao"].mean())
+    teorica = (1.0 + por_selecao) ** tamanhos - 1.0
+
+    figura, eixo = _eixos(altura=5.0)
+    eixo.plot(
+        tamanhos, teorica, color=TINTA_SECUNDARIA, linewidth=1.4,
+        linestyle=(0, (5, 4)),
+        label=f"a conta: (1 + {por_selecao:.3f})ⁿ − 1".replace(".", ","),
+    )
+    eixo.plot(
+        tamanhos, tabela["margem"], color=PALETA[0], marker=MARCADORES[0],
+        markersize=6, linewidth=2.0, label="medido nos bilhetes",
+    )
+
+    eixo.set_xticks(tamanhos)
+    eixo.yaxis.set_major_formatter(_porcentagem())
+    eixo.set_xlabel("seleções no bilhete", color=TINTA, fontsize=10)
+    eixo.set_ylabel("comissão acumulada da casa", color=TINTA, fontsize=10)
+    eixo.set_title(titulo, color=TINTA, fontsize=12, loc="left", pad=22)
+    if subtitulo:
+        eixo.text(
+            0.0, 1.012, subtitulo, transform=eixo.transAxes,
+            color=TINTA_SECUNDARIA, fontsize=9,
+        )
+    eixo.legend(frameon=False, fontsize=9, labelcolor=TINTA, loc="upper left")
+    return _salvar(figura, destino)
+
+
+def previsto_contra_real(
+    tabela: pd.DataFrame,
+    destino: Path,
+    titulo: str = "A chance prometida e a chance que aconteceu",
+    subtitulo: str = "",
+) -> Path:
+    """Taxa prevista pelo modelo, prevista pelo mercado e taxa real, por tamanho.
+
+    Args:
+        tabela: saída de :func:`futebol.backtest.multiplas.medir_por_tamanho`.
+        destino: caminho do PNG.
+
+    ⚠️ **O eixo é logarítmico**, e aqui isso não é preferência: a chance de
+    acertar vai de 36% num bilhete de dois jogos a 0,6% num de dez. Numa escala
+    linear, tudo de cinco jogos para cima vira uma linha colada no zero e a
+    comparação entre previsto e real — que é a pergunta inteira da fase — some.
+
+    Três séries porque são três afirmações diferentes: o que **o modelo**
+    prometeu, o que **o mercado** teria prometido, e o que **aconteceu**. A
+    distância entre a primeira e a terceira é o erro do modelo; a distância
+    entre a segunda e a terceira é o que sobraria para a correlação explicar.
+    """
+    tamanhos = tabela["tamanho"].to_numpy(float)
+    series = (
+        ("prevista_modelo", "o modelo prometeu"),
+        ("prevista_mercado", "o mercado prometeria"),
+        ("real", "aconteceu"),
+    )
+
+    figura, eixo = _eixos(altura=5.0)
+    for posicao, (coluna, rotulo) in enumerate(series):
+        eixo.plot(
+            tamanhos, tabela[coluna], color=PALETA[posicao],
+            marker=MARCADORES[posicao], markersize=6, linewidth=2.0, label=rotulo,
+        )
+
+    eixo.set_yscale("log")
+    eixo.set_xticks(tamanhos)
+    eixo.yaxis.set_major_formatter(
+        FuncFormatter(lambda valor, _: f"{valor:.1%}".replace(".", ","))
+    )
+    eixo.set_xlabel("seleções no bilhete", color=TINTA, fontsize=10)
+    eixo.set_ylabel("chance de acertar tudo (escala log)", color=TINTA, fontsize=10)
+    eixo.set_title(titulo, color=TINTA, fontsize=12, loc="left", pad=22)
+    if subtitulo:
+        eixo.text(
+            0.0, 1.012, subtitulo, transform=eixo.transAxes,
+            color=TINTA_SECUNDARIA, fontsize=9,
+        )
+    eixo.legend(frameon=False, fontsize=9, labelcolor=TINTA, loc="upper right")
+    return _salvar(figura, destino)
