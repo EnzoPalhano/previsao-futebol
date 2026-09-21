@@ -66,6 +66,21 @@ def caminho_da_tabela(cfg: Config) -> Path:
     return cfg.raiz / "data" / "processed" / "jogos.parquet"
 
 
+def pasta_do_deploy(cfg: Config) -> Path:
+    """Os dados versionados que o app usa quando publicado.
+
+    ⚠️ Existe porque `data/processed/` não vai para o Git (regra 4) e um deploy
+    ingênuo sobe o código, não acha os dados e quebra na primeira tela. A Fase 8
+    decidiu versionar dados reduzidos (4,05 MB medidos, os dois arquivos abaixo
+    do limite de 5 MB) e a Fase 9 executou; `scripts/preparar_deploy.py` os
+    gera.
+
+    Localmente esta pasta é ignorada: `data/processed/` vem primeiro, porque é o
+    dado fresco. Ela só entra em cena onde o outro não existe.
+    """
+    return cfg.raiz / "data" / "app"
+
+
 @st.cache_resource(ttl=VALIDADE)
 def config() -> Config:
     return carregar_config()
@@ -82,13 +97,23 @@ def carregar() -> pd.DataFrame:
     """
     cfg = config()
     caminho = caminho_da_tabela(cfg)
-    if not caminho.is_file():
-        raise ErroDeDados(
-            f"A tabela de jogos não existe em {caminho}. Rode, no terminal:\n\n"
-            "    python scripts/baixar_dados.py\n"
-            "    python scripts/preparar_dados.py"
-        )
-    return divisao.separar(limpeza.carregar(cfg), cfg).jogos
+    if caminho.is_file():
+        return divisao.separar(limpeza.carregar(cfg), cfg).jogos
+
+    # Sem `data/processed/`, o app está publicado: usa os dados versionados por
+    # `scripts/preparar_deploy.py`. Eles **já vêm** sem as temporadas do cofre,
+    # e isso é de propósito — num servidor, a forma mais segura de a regra 7
+    # valer é o dado trancado nem estar lá.
+    do_deploy = pasta_do_deploy(cfg) / "jogos.parquet"
+    if do_deploy.is_file():
+        return pd.read_parquet(do_deploy)
+
+    raise ErroDeDados(
+        f"A tabela de jogos não existe em {caminho} nem em {do_deploy}. "
+        "Rode, no terminal:\n\n"
+        "    python scripts/baixar_dados.py\n"
+        "    python scripts/preparar_dados.py"
+    )
 
 
 @st.cache_data(ttl=VALIDADE)
@@ -205,6 +230,13 @@ def modelos_medidos(cfg: Config) -> dict[str, Path]:
         partes = caminho.stem.split("__")
         if len(partes) == 3 and partes[0].startswith(da_validacao):
             encontrados[partes[1]] = caminho
+
+    if not encontrados:
+        # App publicado: só o modelo oficial viaja, como `previsoes_<nome>`.
+        # As telas que comparam candidatos ficam com um modelo só — melhor que
+        # carregar 40 MB de cache para um servidor por causa de uma tabela.
+        for caminho in sorted(pasta_do_deploy(cfg).glob("previsoes_*.parquet")):
+            encontrados[caminho.stem.removeprefix("previsoes_")] = caminho
     return encontrados
 
 

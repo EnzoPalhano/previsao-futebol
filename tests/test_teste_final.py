@@ -196,3 +196,29 @@ def test_o_recorte_por_temporada_e_feito_no_rodar() -> None:
     fonte = inspect.getsource(teste_final.rodar)
     assert "do_teste_final" in fonte, "rodar() nao recorta por temporada"
     assert "previsoes.loc[do_teste]" in fonte
+
+
+def test_os_dados_do_deploy_nao_levam_o_cofre(cfg) -> None:
+    """O app publicado não pode carregar as temporadas trancadas (regra 7).
+
+    ⚠️ Num servidor não há `pytest` rodando nem ninguém conferindo: a única
+    garantia que sobra é o dado trancado **não estar lá**. Por isso
+    `scripts/preparar_deploy.py` grava a tabela já recortada, e por isso este
+    teste existe — se alguém regerar o deploy a partir da tabela completa, ele
+    fica vermelho.
+
+    Pulado quando `data/app/` ainda não foi gerada: ela é versionada, mas um
+    clone que nunca rodou o script não a tem.
+    """
+    from futebol.app import dados as dados_do_app
+
+    caminho = dados_do_app.pasta_do_deploy(cfg) / "jogos.parquet"
+    if not caminho.is_file():
+        pytest.skip("data/app/jogos.parquet ainda nao foi gerada")
+
+    jogos = pd.read_parquet(caminho)
+    do_cofre = jogos["temporada"].map(teste_final.do_teste_final)
+    assert int(do_cofre.sum()) == 0, (
+        f"{int(do_cofre.sum())} jogos do teste final entraram nos dados do "
+        "deploy - rode `python scripts/preparar_deploy.py` de novo"
+    )
