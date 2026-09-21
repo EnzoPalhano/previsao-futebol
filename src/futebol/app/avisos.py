@@ -192,8 +192,34 @@ CASH_OUT_COBRA_SEMPRE = Aviso(
     origem="Fase 7 — docs/relatorios/fase7.md",
 )
 
+#: Quanto o modelo exagera... não. Este é outro: o aviso da Fase 10.
+#:
+#: ⚠️ É o aviso mais fácil de o projeto se trair. Um ajuste por desfalques
+#: **parece** obviamente certo — claro que perder o artilheiro piora o time — e
+#: é exatamente por parecer óbvio que ele dispensaria medição na cabeça de quem
+#: olha. A aritmética diz o contrário: a fase não tem amostra para provar nada.
+AJUSTE_NAO_VALIDADO = Aviso(
+    titulo="O ajuste por desfalques NÃO está validado",
+    texto=(
+        "As probabilidades ajustadas desta tela são uma **hipótese em teste**, "
+        "não uma melhoria comprovada. O projeto registra as duas previsões "
+        "antes de cada jogo e só vai poder compará-las depois que os jogos "
+        "acontecerem — e isso leva meses.\n\n"
+        "O tamanho do problema está medido: com ~150 jogos (umas seis semanas), "
+        "a menor melhora de log loss que essa amostra conseguiria detectar é "
+        "**0,0338** — enquanto a distância **inteira** do modelo para o mercado "
+        f"é {relatorio.num(DISTANCIA_DO_MERCADO)}. Ou seja, pela log loss o "
+        "ajuste teria de superar o mercado em 60% só para o efeito aparecer.\n\n"
+        "Enquanto o intervalo de confiança cruzar zero, a resposta honesta é "
+        "**\"ainda não dá para saber\"** — nem \"funciona\", nem \"não "
+        "funciona\"."
+    ),
+    origem="Fase 10 — medido com os dados do próprio projeto.",
+)
+
 #: Todos os avisos, para o teste que confere que nenhum ficou órfão.
 TODOS: tuple[Aviso, ...] = (
+    AJUSTE_NAO_VALIDADO,
     JOGO_RESPONSAVEL,
     MODELO_PERDE_DO_MERCADO,
     EV_POSITIVO_NAO_E_OPORTUNIDADE,

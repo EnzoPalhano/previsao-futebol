@@ -34,6 +34,7 @@ from futebol.app.paginas import (
     comparar,
     comum,
     desempenho,
+    desfalques,
     inicio,
     multiplas,
     prever,
@@ -105,7 +106,11 @@ def test_a_pagina_de_cash_out_avisa_que_a_taxa_e_sempre_a_mesma() -> None:
 
 def test_toda_pagina_de_aposta_tem_rodape_de_jogo_responsavel() -> None:
     """A seção 9 pede o aviso na página inicial; o projeto põe em todas."""
-    for pagina in (inicio, prever, comparar, backtest, multiplas, cash_out, desempenho):
+    paginas = (
+        inicio, prever, comparar, backtest,
+        multiplas, cash_out, desempenho, desfalques,
+    )
+    for pagina in paginas:
         assert "comum.rodape()" in inspect.getsource(pagina), (
             f"a pagina {pagina.__name__} nao chama o rodape de jogo responsavel"
         )
@@ -239,7 +244,10 @@ def test_o_app_abre_sem_estourar() -> None:
 @precisa_de_dados
 @pytest.mark.parametrize(
     "pagina",
-    [inicio, prever, comparar, backtest, multiplas, cash_out, desempenho],
+    [
+        inicio, prever, comparar, backtest,
+        multiplas, cash_out, desempenho, desfalques,
+    ],
     ids=lambda p: p.__name__.rsplit(".", 1)[-1],
 )
 def test_cada_pagina_roda_sem_estourar(pagina) -> None:
@@ -296,3 +304,22 @@ def test_o_app_nunca_oferece_o_cache_do_teste_final() -> None:
             f"o candidato {nome!r} veio da janela {janela!r}, que nao e a de "
             "validacao - a regra 7 proibe o app de ler o teste final"
         )
+
+
+def test_a_pagina_de_desfalques_avisa_que_o_ajuste_nao_esta_validado() -> None:
+    """⚠️ A tela mais facil de o projeto se trair.
+
+    Um ajuste por desfalques PARECE obviamente certo -- claro que perder o
+    artilheiro piora o time -- e e justamente por parecer obvio que ele
+    dispensaria medicao na cabeca de quem olha. Todas as outras telas mostram
+    coisas medidas; esta mostra uma hipotese em teste.
+    """
+    fonte = inspect.getsource(desfalques)
+    assert "AJUSTE_NAO_VALIDADO" in fonte
+
+
+def test_o_aviso_da_fase_10_diz_que_a_log_loss_nao_alcanca() -> None:
+    """O numero que redesenha a fase, e ele precisa estar na tela."""
+    texto = avisos.AJUSTE_NAO_VALIDADO.texto
+    assert "0,0338" in texto, "falta o menor efeito detectavel"
+    assert "ainda não dá para saber" in texto.lower()

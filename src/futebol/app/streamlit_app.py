@@ -2,10 +2,11 @@
 
     streamlit run src/futebol/app/streamlit_app.py
 
-Sete telas, na ordem em que fazem sentido: o que o projeto é, o que o modelo
+Oito telas, na ordem em que fazem sentido: o que o projeto é, o que o modelo
 acha de um jogo, o que isso vale contra as odds, o que teria acontecido com o
-dinheiro, o que as múltiplas custam, se o cash out compensa, e como os modelos
-se saem uns contra os outros.
+dinheiro, o que as múltiplas custam, se o cash out compensa, como os modelos
+se saem uns contra os outros — e, por último, a hipótese que a Fase 10 ainda
+está testando.
 
 ⚠️ **Este arquivo é só a navegação.** Cada tela mora em
 ``futebol/app/paginas/``, e as contas moram nos módulos de sempre
@@ -25,6 +26,7 @@ from futebol.app.paginas import (
     cash_out,
     comparar,
     desempenho,
+    desfalques,
     inicio,
     multiplas,
     prever,
@@ -32,10 +34,10 @@ from futebol.app.paginas import (
 
 #: As telas, na ordem do menu: ``(função, título, ícone, caminho na URL)``.
 #:
-#: O ícone não é enfeite: com sete páginas, é ele que permite achar a certa sem
+#: O ícone não é enfeite: com oito páginas, é ele que permite achar a certa sem
 #: ler. E o **caminho na URL é obrigatório**: todas as telas expõem uma função
 #: chamada ``mostrar``, e o Streamlit deriva o endereço do nome da função quando
-#: ninguém o informa — as sete viram ``/mostrar`` e o app se recusa a abrir,
+#: ninguém o informa — as oito viram ``/mostrar`` e o app se recusa a abrir,
 #: porque endereço repetido tornaria impossível saber em que página se está.
 PAGINAS = (
     (inicio.mostrar, "Início", "🏠", "inicio"),
@@ -45,6 +47,10 @@ PAGINAS = (
     (multiplas.mostrar, "Múltiplas", "🎟️", "multiplas"),
     (cash_out.mostrar, "Cash out", "💸", "cash-out"),
     (desempenho.mostrar, "Desempenho", "📊", "desempenho"),
+    # ⚠️ A tela da Fase 10 fica por ÚLTIMO de propósito. Ela é a única do app
+    # que mostra uma hipótese em teste em vez de uma medição, e pô-la antes das
+    # telas medidas passaria a impressão contrária.
+    (desfalques.mostrar, "Desfalques", "🏥", "desfalques"),
 )
 
 
