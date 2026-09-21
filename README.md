@@ -66,7 +66,7 @@ exigido procurar vazamento, não comemorar.
 | 7 | Múltiplas e cash out | ✅ concluída |
 | 8 | Aplicativo Streamlit | ✅ concluída |
 | 9 | Teste final | ✅ **concluída** |
-| 10 | Notícias e desfalques | — (opcional) |
+| 10 | Notícias e desfalques | ✅ concluída |
 
 ---
 
@@ -100,7 +100,8 @@ Os guias completos, escritos para quem nunca programou:
 [Fase 6 — teria dado lucro?](docs/guias/GUIA_FASE_6.md),
 [Fase 7 — por que a casa adora múltiplas](docs/guias/GUIA_FASE_7.md) e
 [Fase 8 — o aplicativo](docs/guias/GUIA_FASE_8.md) e
-[Fase 9 — o teste final](docs/guias/GUIA_FASE_9.md).
+[Fase 9 — o teste final](docs/guias/GUIA_FASE_9.md) e
+[Fase 10 — desfalques e notícias](docs/guias/GUIA_FASE_10.md).
 
 ---
 
@@ -129,6 +130,8 @@ Os guias completos, escritos para quem nunca programou:
 | Abrir o app | `streamlit run src/futebol/app/streamlit_app.py` |
 | **Rodar o teste final** (uma vez!) | `python scripts/teste_final.py` |
 | Gerar os dados do app publicado | `python scripts/preparar_deploy.py` |
+| Buscar desfalques da rodada | `python scripts/desfalques.py --falso` |
+| Ler o caderno do paper trading | `python scripts/desfalques.py --avaliar` |
 
 ---
 
@@ -298,6 +301,31 @@ mediu, em 21.682 apostas, que seria uma recomendação ruim. Então:
 O app **não tem matemática própria**: todo número vem do mesmo código que gerou os
 relatórios, e a tela de desempenho refaz as contas a partir do mesmo cache de
 previsões em vez de copiar valores. Tela e documento não têm como discordar.
+
+---
+
+## A última fase: desfalques e notícias
+
+O modelo olha resultados passados e mais nada — ele não sabe que o artilheiro
+está lesionado. A [Fase 10](docs/guias/GUIA_FASE_10.md) monta o pipeline que
+conta isso a ele: próximos jogos → times alvo → API de lesões → notícias → um
+LLM que lê o texto e devolve JSON → peso do jogador → ajuste da força do time.
+
+```powershell
+python scripts/desfalques.py --falso   # roda tudo sem chave nenhuma
+```
+
+⚠️ **E ela termina sem provar nada, de propósito.** O projeto mediu quanto
+precisaria de amostra: com ~150 jogos (seis semanas), a menor melhora de log
+loss detectável é **0,0338** — enquanto a distância **inteira** do modelo para o
+mercado é **0,0212**. Pela log loss, o ajuste teria de superar o mercado em 60%
+só para o efeito aparecer. Não há atalho: a avaliação é para frente (*paper
+trading*), leva meses, e enquanto o intervalo de confiança cruzar zero a
+resposta é **"ainda não dá para saber"**.
+
+O único uso de IA do projeto está aqui, e a fronteira é estrita: o LLM **lê
+texto**, nunca calcula probabilidade. A probabilidade continua saindo do
+Dixon-Coles, que é uma conta fechada e auditável.
 
 ---
 
