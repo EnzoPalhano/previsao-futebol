@@ -34,6 +34,15 @@ dist/
 *.parquet
 *.csv.gz
 
+# EXCECAO CONSCIENTE (Fase 9): os dados que o app publicado usa.
+# O app depende de data/processed/, que nao vai para o Git -- um deploy ingenuo
+# sobe o codigo, nao acha os dados e quebra na primeira tela. A Fase 8 decidiu
+# versionar dados reduzidos e a Fase 9 executou: 1,44 MB + 2,61 MB, os dois
+# abaixo do limite de 5 MB por arquivo da regra 4, e ja SEM as temporadas do
+# teste final (regra 7). Gerados por scripts/preparar_deploy.py, que confere o
+# limite antes de deixar commitar.
+!data/app/*.parquet
+
 # Sistema operacional
 Thumbs.db
 .DS_Store
