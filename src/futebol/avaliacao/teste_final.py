@@ -194,10 +194,14 @@ class Janela:
     ainda_trancados: int
 
     def resumo(self) -> str:
+        from futebol import relatorio
+
         return (
-            f"{self.avaliados} jogos entre {self.inicio.date()} e "
-            f"{self.fim.date()} ({', '.join(self.temporadas)}); "
-            f"{self.ainda_trancados} seguem trancados (temporada em andamento)"
+            f"{relatorio.inteiro(self.avaliados)} jogos entre "
+            f"{self.inicio.date()} e {self.fim.date()} "
+            f"({', '.join(self.temporadas)}); "
+            f"{relatorio.inteiro(self.ainda_trancados)} seguem trancados "
+            "(temporada em andamento)"
         )
 
 
@@ -266,6 +270,9 @@ class Resultado:
         medida_mercado: o mesmo, das odds de fechamento.
         amostra: a saída de :func:`simulador.preparar`.
         aposta: o resultado da configuração pré-registrada (EV > 5%).
+        apostas: as apostas em si, uma linha cada. O relatório precisa delas
+            para as tabelas por liga, por temporada e por mercado — que são o
+            que responde o critério 2 da seção 8.4 (consistência).
         regua: apostar em **todas** as candidatas — a referência sem a qual o
             número acima não se lê (Fase 6).
         janela: de onde tudo saiu.
@@ -276,6 +283,7 @@ class Resultado:
     medida_mercado: validacao.Medida
     amostra: simulador.Amostra
     aposta: simulador.Resultado
+    apostas: pd.DataFrame
     regua: simulador.Resultado
     janela: Janela
 
@@ -313,6 +321,28 @@ def rodar(
         aviso=aviso,
     )
 
+    # ⚠️ **O walk-forward prevê por DATA, e a janela do teste final é por
+    # TEMPORADA** — e as duas não coincidem. A temporada europeia 2023/24 vai
+    # até maio de 2024, enquanto a janela começa em 25/01/2024, que é quando o
+    # Brasileirão 2024 abre. Sem este recorte, 4.261 jogos de 2023/24 entram no
+    # teste final: jogos que as Fases 3 a 8 já tinham visto, medidos como se
+    # fossem inéditos.
+    #
+    # O erro não é de vazamento do futuro (a regra 6 segue intacta: cada
+    # previsão só viu o passado dela). É de **contaminação do teste**, que é
+    # outra coisa e igualmente fatal — um teste final medido em parte sobre
+    # dados já usados não é um teste final.
+    do_teste = (
+        janela.jogos.loc[previsoes.index, "temporada"].map(do_teste_final).to_numpy()
+    )
+    previsoes = previsoes.loc[do_teste]
+    if aviso is not None:
+        aviso(
+            f"    {int(do_teste.sum())} previsões são das temporadas do teste "
+            f"final; {int((~do_teste).sum())} de temporadas anteriores foram "
+            "descartadas (a janela é por temporada, não por data)"
+        )
+
     do_mercado = validacao.previsoes_do_mercado(janela.jogos.loc[previsoes.index])
     modelo, mercado = validacao.mesmos_jogos(previsoes, do_mercado)
 
@@ -337,6 +367,7 @@ def rodar(
         aposta=simulador.medir(
             apostas, "modelo", amostras_bootstrap=bootstrap, seed=cfg.seed
         ),
+        apostas=apostas,
         regua=simulador.medir(
             amostra.candidatos,
             "todas as candidatas",

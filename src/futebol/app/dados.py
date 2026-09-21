@@ -182,15 +182,28 @@ def modelos_medidos(cfg: Config) -> dict[str, Path]:
     minutos, e um app que trava por minutos num clique não é um app — é um
     script com botões. Quem quiser medir uma configuração nova roda
     ``scripts/validar.py``, que é onde isso pertence.
+
+    ⚠️⚠️ **Só entram os caches da janela de VALIDAÇÃO, e isto é a regra 7.** O
+    nome do arquivo é ``<janela>__<candidato>__<assinatura>``, e a Fase 9 grava
+    um cache do **mesmo candidato** numa janela diferente — a trancada. Chaveando
+    só pelo nome do candidato, os dois arquivos colidiam e o do teste final
+    vencia: o app passava a ler as temporadas que ele nunca pode mostrar.
+
+    O que denunciou foi um ``KeyError`` (os índices do cofre não existem na
+    tabela do app, que exclui as temporadas trancadas), e isso foi **sorte** —
+    tivessem os índices batido, a tela mostraria dados do teste final em
+    silêncio. É a armadilha de sempre do projeto numa forma nova: chave que
+    ignora parte do que identifica o arquivo.
     """
     pasta = selecao.pasta_do_cache(cfg)
     if not pasta.is_dir():
         return {}
+    da_validacao = f"{pd.Timestamp(selecao.INICIO_VALIDACAO).date()}_"
     encontrados = {}
     for caminho in sorted(pasta.glob("*.parquet")):
         # O nome é "<janela>__<candidato>__<assinatura>.parquet".
         partes = caminho.stem.split("__")
-        if len(partes) == 3:
+        if len(partes) == 3 and partes[0].startswith(da_validacao):
             encontrados[partes[1]] = caminho
     return encontrados
 

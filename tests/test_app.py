@@ -24,6 +24,7 @@ from __future__ import annotations
 import inspect
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from futebol.app import avisos
@@ -267,3 +268,31 @@ def test_a_pagina_inicial_mostra_o_resultado_negativo() -> None:
     teste.run()
     texto = " ".join(bloco.value for bloco in teste.markdown)
     assert "não há vantagem" in texto.lower()
+
+
+@precisa_de_dados
+def test_o_app_nunca_oferece_o_cache_do_teste_final() -> None:
+    """Regra 7: a tela não pode ler as temporadas trancadas. Nem por acidente.
+
+    ⚠️ Isto chegou a acontecer. O cache do walk-forward é um arquivo por
+    ``<janela>__<candidato>__<assinatura>``, e a Fase 9 grava um cache do
+    **mesmo candidato** (``dc-xi-0.003``) numa janela diferente — a trancada.
+    Como ``modelos_medidos`` chaveava só pelo nome do candidato, os dois
+    arquivos colidiam e o do teste final vencia por vir depois na ordem: o app
+    passava a servir as temporadas do cofre.
+
+    O que denunciou foi um ``KeyError``, porque os índices do cofre não existem
+    na tabela do app. Isso foi **sorte**: com os índices batendo, a tela teria
+    mostrado dados do teste final sem erro nenhum.
+    """
+    from futebol.app import dados
+    from futebol.avaliacao import selecao
+
+    cfg = dados.config()
+    da_validacao = f"{pd.Timestamp(selecao.INICIO_VALIDACAO).date()}_"
+    for nome, caminho in dados.modelos_medidos(cfg).items():
+        janela = caminho.stem.split("__")[0]
+        assert janela.startswith(da_validacao), (
+            f"o candidato {nome!r} veio da janela {janela!r}, que nao e a de "
+            "validacao - a regra 7 proibe o app de ler o teste final"
+        )

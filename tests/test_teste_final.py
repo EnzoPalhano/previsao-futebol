@@ -154,3 +154,45 @@ def test_a_janela_comeca_onde_o_cofre_comeca(cfg) -> None:
     (jogos avaliados duas vezes, uma delas indevidamente).
     """
     assert divisao.ano_de_corte(cfg) == min(teste_final.ANOS_DO_TESTE_FINAL)
+
+
+def test_a_faixa_de_datas_da_janela_contem_temporada_anterior(cfg) -> None:
+    """A janela é por temporada; o walk-forward avalia por data. Não coincidem.
+
+    ⚠️ Este teste guarda um defeito que chegou a produzir números: a temporada
+    europeia 2023/24 vai até maio de 2024, e a janela do teste final começa em
+    25/01/2024, que é quando o Brasileirão 2024 abre. Quem recortasse só por
+    data levaria 4.261 jogos de 2023/24 para dentro do teste final — jogos que
+    as Fases 3 a 8 já tinham visto.
+
+    Não é vazamento do futuro (a regra 6 continua valendo: cada previsão só viu
+    o passado dela). É contaminação do teste, que é outra coisa e igualmente
+    fatal: um teste final medido em parte sobre dados já usados não é um teste
+    final.
+    """
+    tabela = _tabela(
+        [
+            ("2023/24", "2024-03-01"),  # dentro da faixa de datas, FORA do teste
+            ("2024", "2024-02-01"),  # ano civil: dentro dos dois
+            ("2024/25", "2024-09-10"),
+        ]
+    )
+    janela = teste_final.abrir_cofre(tabela, cfg)
+
+    na_faixa = tabela.loc[
+        (tabela["data"] >= janela.inicio) & (tabela["data"] < janela.fim)
+    ]
+    assert len(na_faixa) == 3, "os tres jogos caem na faixa de datas"
+
+    do_teste = na_faixa["temporada"].map(teste_final.do_teste_final)
+    assert int(do_teste.sum()) == 2, "so dois sao das temporadas registradas"
+    assert not teste_final.do_teste_final("2023/24")
+
+
+def test_o_recorte_por_temporada_e_feito_no_rodar() -> None:
+    """A correção precisa estar no caminho que o script roda, não só existir."""
+    import inspect
+
+    fonte = inspect.getsource(teste_final.rodar)
+    assert "do_teste_final" in fonte, "rodar() nao recorta por temporada"
+    assert "previsoes.loc[do_teste]" in fonte
