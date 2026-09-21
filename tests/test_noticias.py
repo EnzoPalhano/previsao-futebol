@@ -844,3 +844,44 @@ def test_preencher_resultados_completa_so_o_que_aconteceu(cfg, tmp_path) -> None
 
     caderno = registro.carregar(temporario)
     assert (caderno["resultado"] == "H").sum() == 1
+
+
+def test_o_caderno_falso_nao_toca_o_real(cfg, tmp_path) -> None:
+    """⚠️ Integridade da fase, não organização de arquivos.
+
+    Se `--falso` gravasse no mesmo caderno, previsões INVENTADAS entrariam na
+    mesma tabela que as reais e a avaliação passaria a misturar as duas — sem
+    deixar rastro de qual era qual. Um caderno de evidência contaminado por dado
+    de mentira não vale nada, e o estrago seria invisível.
+    """
+    from futebol.noticias import registro
+
+    temporario = _cfg_temporario(cfg, tmp_path)
+    registro.anotar(
+        temporario, _linhas(3, com_ajuste=True, ajustado_melhor=True), falso=True
+    )
+
+    assert registro.caminho(temporario, falso=True).is_file()
+    assert not registro.caminho(temporario, falso=False).is_file(), (
+        "o modo falso escreveu no caderno real"
+    )
+    assert len(registro.carregar(temporario, falso=False)) == 0
+    assert len(registro.carregar(temporario, falso=True)) == 3
+
+
+def test_a_avaliacao_do_falso_nao_le_o_real(cfg, tmp_path) -> None:
+    """Os dois cadernos são mundos separados, nos dois sentidos."""
+    from futebol.noticias import registro
+
+    temporario = _cfg_temporario(cfg, tmp_path)
+    registro.anotar(
+        temporario, _linhas(60, com_ajuste=True, ajustado_melhor=True), falso=False
+    )
+    registro.anotar(
+        temporario, _linhas(60, com_ajuste=True, ajustado_melhor=False), falso=True
+    )
+
+    real = registro.avaliar(temporario, falso=False)
+    demo = registro.avaliar(temporario, falso=True)
+    assert real.diferenca < 0, "o caderno real foi contaminado pelo falso"
+    assert demo.diferenca > 0, "o caderno falso leu o real"

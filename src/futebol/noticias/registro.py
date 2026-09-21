@@ -79,19 +79,29 @@ COLUNAS: tuple[str, ...] = (
 MINIMO_PARA_MOSTRAR = 30
 
 
-def caminho(cfg: Config) -> Path:
-    return cfg.raiz / "data" / "noticias" / "registro.csv"
+def caminho(cfg: Config, falso: bool = False) -> Path:
+    """Onde o caderno mora.
+
+    ⚠️ **O modo de demonstração escreve num arquivo SEPARADO, e isso não é
+    organização: é a integridade da fase.** Se `--falso` gravasse no mesmo
+    caderno, previsões inventadas entrariam na mesma tabela que as reais e a
+    avaliação passaria a misturar as duas — sem deixar rastro de qual era qual.
+    Um caderno de evidência contaminado por dado de mentira não vale nada, e o
+    estrago seria invisível.
+    """
+    nome = "registro_falso.csv" if falso else "registro.csv"
+    return cfg.raiz / "data" / "noticias" / nome
 
 
-def carregar(cfg: Config) -> pd.DataFrame:
+def carregar(cfg: Config, falso: bool = False) -> pd.DataFrame:
     """O caderno inteiro, ou um vazio com as colunas certas."""
-    arquivo = caminho(cfg)
+    arquivo = caminho(cfg, falso)
     if not arquivo.is_file():
         return pd.DataFrame(columns=list(COLUNAS))
     return pd.read_csv(arquivo)
 
 
-def anotar(cfg: Config, linhas: list[dict]) -> Path:
+def anotar(cfg: Config, linhas: list[dict], falso: bool = False) -> Path:
     """Acrescenta previsões ao caderno, sem apagar o que já estava.
 
     ⚠️ **Acrescenta, nunca reescreve.** Um caderno que pode ser reescrito é um
@@ -100,7 +110,7 @@ def anotar(cfg: Config, linhas: list[dict]) -> Path:
     :func:`avaliar` cuida disso, ficando com a **primeira** gravação de cada
     jogo, que é a que foi feita sem saber o resultado.
     """
-    arquivo = caminho(cfg)
+    arquivo = caminho(cfg, falso)
     arquivo.parent.mkdir(parents=True, exist_ok=True)
 
     agora = datetime.now(UTC).isoformat(timespec="seconds")
@@ -109,7 +119,7 @@ def anotar(cfg: Config, linhas: list[dict]) -> Path:
          for linha in linhas],
         columns=list(COLUNAS),
     )
-    completo = pd.concat([carregar(cfg), novas], ignore_index=True)
+    completo = pd.concat([carregar(cfg, falso), novas], ignore_index=True)
     completo.to_csv(arquivo, index=False)
     return arquivo
 
@@ -175,14 +185,16 @@ def _perdas(tabela: pd.DataFrame, sufixo: str) -> np.ndarray:
     return -np.log(np.clip(escolhidas, 1e-15, 1.0))
 
 
-def avaliar(cfg: Config, caderno: pd.DataFrame | None = None) -> Comparacao:
+def avaliar(
+    cfg: Config, caderno: pd.DataFrame | None = None, falso: bool = False
+) -> Comparacao:
     """Compara as duas previsões nos jogos que já aconteceram.
 
     ⚠️ O veredito é decidido **aqui**, e quem chama não pode escolher outro. A
     regra é a da especificação: enquanto o intervalo de confiança cruzar zero, a
     resposta é "ainda não dá para saber".
     """
-    caderno = carregar(cfg) if caderno is None else caderno
+    caderno = carregar(cfg, falso) if caderno is None else caderno
     prontos = primeira_gravacao(caderno)
     if not prontos.empty:
         prontos = prontos.loc[prontos["resultado"].isin(_CHAVES)]
@@ -286,7 +298,9 @@ def _veredito(
     )
 
 
-def preencher_resultados(cfg: Config, jogos: pd.DataFrame) -> int:
+def preencher_resultados(
+    cfg: Config, jogos: pd.DataFrame, falso: bool = False
+) -> int:
     """Completa o ``resultado`` das linhas cujos jogos já aconteceram.
 
     Args:
@@ -295,7 +309,7 @@ def preencher_resultados(cfg: Config, jogos: pd.DataFrame) -> int:
     Retorna:
         Quantas linhas foram preenchidas.
     """
-    caderno = carregar(cfg)
+    caderno = carregar(cfg, falso)
     if caderno.empty:
         return 0
 
@@ -317,7 +331,7 @@ def preencher_resultados(cfg: Config, jogos: pd.DataFrame) -> int:
 
     juntado.loc[achou, "resultado"] = juntado.loc[achou, "resultado_real"]
     juntado = juntado.drop(columns=["resultado_real"])
-    juntado.to_csv(caminho(cfg), index=False)
+    juntado.to_csv(caminho(cfg, falso), index=False)
     return int(achou.sum())
 
 

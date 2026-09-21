@@ -43,6 +43,16 @@ dist/
 # limite antes de deixar commitar.
 !data/app/*.parquet
 
+# FASE 10: estado de execucao das noticias.
+# - cache/ e orcamento.json sao estado da API (respostas guardadas e a cota do
+#   dia), inuteis fora da maquina que rodou;
+# - registro.csv e o caderno de paper trading do Enzo. E EVIDENCIA LOCAL: vale
+#   fazer backup, mas nao versionar - ele cresce a cada rodada e commita-lo
+#   misturaria dado de execucao com codigo;
+# - registro_falso.csv e dado INVENTADO do modo --falso, e nunca deve sair
+#   daqui.
+data/noticias/
+
 # Sistema operacional
 Thumbs.db
 .DS_Store
