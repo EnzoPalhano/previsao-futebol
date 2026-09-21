@@ -10,6 +10,36 @@ existe (ou não) vantagem sobre o mercado.
 
 ---
 
+## A resposta: não há vantagem, e está medida
+
+O projeto terminou. O [teste final](docs/relatorios/final.md) abriu, **uma única vez**,
+duas temporadas que estiveram trancadas desde o começo — 24.779 jogos que nenhum modelo
+viu e que nenhum parâmetro foi escolhido olhando.
+
+| | Teste final (2024/25 e 2025/26) | Validação (2021–24) |
+|---|---|---|
+| **CLV** *(o critério que decide)* | **−9,02%** (IC −9,18% a −8,85%) | −7,82% |
+| **ROI** | **−14,41%** (IC −17,00% a −11,80%) | −12,92% |
+| Apostar em **tudo**, sem modelo | −7,41% | −6,88% |
+| Distância do mercado (log loss) | **+0,0212** | +0,0226 |
+| Ligas com CLV positivo | 0 de 18 | 0 de 18 |
+
+**Veredito:** falharam os critérios primários 1 e 2 do critério de parada. O modelo **não
+tem vantagem demonstrável** sobre as casas. Com 13.163 apostas — o dobro do mínimo que o
+projeto exigiu de si mesmo —, a conclusão é "não há vantagem", e não "faltou amostra".
+
+E o achado que interessa mais que o veredito: **o modelo não piorou fora da amostra.**
+Ficou a 0,0212 de log loss do mercado, contra 0,0226 na validação. Ele é exatamente o que
+sempre foi — e o que sempre foi é pior que o mercado. Uma distância muito *menor* ali teria
+exigido procurar vazamento, não comemorar.
+
+> **Por que isso é o produto e não o fracasso.** Havia caminhos fáceis para um resultado
+> bonito: apostar na odd máxima, varrer parâmetros até o backtest fechar no azul, escolher a
+> liga e o período que deram certo, ou simplesmente não separar um teste final. O valor deste
+> repositório é a máquina que impediu cada um deles.
+
+---
+
 ## O que o projeto faz
 
 1. Baixa resultados históricos e odds de **38 competições** do football-data.co.uk.
@@ -35,8 +65,8 @@ existe (ou não) vantagem sobre o mercado.
 | 6 | Backtest de apostas | ✅ concluída |
 | 7 | Múltiplas e cash out | ✅ concluída |
 | 8 | Aplicativo Streamlit | ✅ concluída |
-| 9 | Teste final | ⏳ próxima |
-| 10 | Notícias e desfalques | — |
+| 9 | Teste final | ✅ **concluída** |
+| 10 | Notícias e desfalques | — (opcional) |
 
 ---
 
@@ -69,7 +99,8 @@ Os guias completos, escritos para quem nunca programou:
 [Fase 5 — quando a resposta é "não"](docs/guias/GUIA_FASE_5.md),
 [Fase 6 — teria dado lucro?](docs/guias/GUIA_FASE_6.md),
 [Fase 7 — por que a casa adora múltiplas](docs/guias/GUIA_FASE_7.md) e
-[Fase 8 — o aplicativo](docs/guias/GUIA_FASE_8.md).
+[Fase 8 — o aplicativo](docs/guias/GUIA_FASE_8.md) e
+[Fase 9 — o teste final](docs/guias/GUIA_FASE_9.md).
 
 ---
 
@@ -96,6 +127,8 @@ Os guias completos, escritos para quem nunca programou:
 | Gerar o relatório da Fase 6 | `python scripts/relatorio_fase6.py` |
 | Gerar o relatório da Fase 7 | `python scripts/relatorio_fase7.py` |
 | Abrir o app | `streamlit run src/futebol/app/streamlit_app.py` |
+| **Rodar o teste final** (uma vez!) | `python scripts/teste_final.py` |
+| Gerar os dados do app publicado | `python scripts/preparar_deploy.py` |
 
 ---
 
@@ -236,6 +269,14 @@ streamlit run src/futebol/app/streamlit_app.py
 Sete telas: as probabilidades de um confronto, o valor esperado contra as odds
 que você digitar, o backtest com a banca ao longo do tempo, o montador de
 múltiplas, o valor justo de um cash out e as tabelas de desempenho dos modelos.
+
+![A tela inicial do app](docs/imagens/app_inicio.jpg)
+
+*A abertura dá o resultado antes de oferecer a ferramenta.*
+
+![A tela de previsão](docs/imagens/app_prever.jpg)
+
+*Toda tela que mostra probabilidade carrega o aviso do que foi medido sobre ela.*
 
 ⚠️ **O app é a primeira entrega que alguém pode usar sem ler relatório nenhum**, e
 isso define o desenho dele. Uma tela que mostra "68% de chance" e "valor esperado
