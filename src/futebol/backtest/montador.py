@@ -108,8 +108,18 @@ class Opcao:
         }
 
 
-def _montar_opcao(pernas: pd.DataFrame, valor: float) -> Opcao:
-    """As contas de um bilhete, a partir das seleções escolhidas."""
+def avaliar(pernas: pd.DataFrame, valor: float = 10.0) -> Opcao:
+    """As contas de um bilhete já escolhido — inclusive um montado na mão.
+
+    É a porta de entrada para quem **já sabe** o que quer apostar: o app da
+    Fase 8 usa esta função quando a pessoa monta o bilhete clicando seleção por
+    seleção, exatamente como faria no site da casa.
+
+    ⚠️ Ela não confere a restrição de uma seleção por jogo, porque quem chama
+    pode estar avaliando um bilhete que outra pessoa montou — e recusar-se a
+    fazer a conta não ajudaria ninguém. Quem monta é que garante a restrição;
+    as funções deste módulo que montam sempre garantem.
+    """
     resumo = multiplas.resumir(pernas, len(pernas), bloco=0)
     odd_total = float(resumo["odd_total"])
     prob_modelo = float(resumo["prob_modelo"])
@@ -149,7 +159,7 @@ def por_tamanho(
     if len(por_jogo) < tamanho or tamanho < 1:
         return None
     escolhidas = por_jogo.sort_values("prob", ascending=False).head(tamanho)
-    return _montar_opcao(escolhidas, valor)
+    return avaliar(escolhidas, valor)
 
 
 # ----------------------------------------------------------------------------
@@ -242,7 +252,7 @@ def busca_em_feixe(
 
     if melhor is None:
         return None
-    return _montar_opcao(por_jogo.iloc[list(melhor.indices)], valor)
+    return avaliar(por_jogo.iloc[list(melhor.indices)], valor)
 
 
 # ----------------------------------------------------------------------------
