@@ -17,6 +17,7 @@ gerou os relatórios — e é por isso que a tela não pode discordar do documen
 from __future__ import annotations
 
 import streamlit as st
+import streamlit.components.v1 as componentes
 
 from futebol.app import dados
 from futebol.app.paginas import (
@@ -47,12 +48,40 @@ PAGINAS = (
 )
 
 
+def declarar_idioma() -> None:
+    """Avisa ao navegador que a página está em português.
+
+    ⚠️ **Sem isto o Chrome traduz o app — de português para português.** O
+    Streamlit serve a página com ``<html lang="en">`` e não expõe jeito de mudar
+    isso; o navegador acredita na declaração, não no texto, e oferece (ou aplica
+    sozinho, para quem tem tradução automática ligada) uma tradução do inglês.
+    O resultado é um texto remoído: "Apostas envolvem risco real de perda" vira
+    "Apostas de envolvimento risco real de perda", "Início" vira "Não se trata de
+    uma questão de", e "o mínimo que o próprio projeto exigiu de si mesmo" vira
+    "o projeto de sucesso de si mesmo", que não quer dizer nada.
+
+    Num app qualquer isso seria feio. Aqui é grave: **os avisos obrigatórios são
+    o produto desta fase**, e eles dependem de dizer exatamente o que dizem. Um
+    aviso de jogo responsável parafraseado por tradutor automático é um aviso
+    que ninguém revisou.
+
+    O componente é um iframe de altura zero servido da mesma origem, que é o
+    único caminho que o Streamlit deixa aberto para tocar no ``<html>`` da
+    página. ``_top`` alcança o documento de fora do iframe.
+    """
+    componentes.html(
+        "<script>window.top.document.documentElement.lang = 'pt-BR';</script>",
+        height=0,
+    )
+
+
 def main() -> None:
     st.set_page_config(
         page_title="Previsão probabilística de futebol",
         page_icon="⚽",
         layout="wide",
     )
+    declarar_idioma()
 
     try:
         dados.carregar()

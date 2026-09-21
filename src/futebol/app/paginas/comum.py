@@ -14,6 +14,26 @@ from futebol import relatorio
 from futebol.app import avisos, dados
 
 
+def reais(valor: float) -> str:
+    r"""Um valor em reais seguro para escrever dentro de Markdown.
+
+    ⚠️ **O cifrão abre fórmula matemática no Streamlit.** O Markdown dele aceita
+    LaTeX entre ``$...$``, então um texto com *dois* ``R$`` — "ganha R\$ 6,10 por
+    bilhete de R\$ 10,00" — faz tudo o que está entre os dois cifrões virar
+    fórmula: o negrito deixa de funcionar, os ``**`` aparecem crus e os números
+    saem em fonte de equação. Era exatamente o que a linha de valor esperado da
+    página de múltiplas mostrava.
+
+    Escapar o cifrão resolve, e vale mesmo quando há só um na frase: a frase de
+    hoje com um vira a frase de amanhã com dois, e o defeito volta calado.
+
+    ⚠️ Serve para texto em Markdown (``st.markdown``, ``st.caption``,
+    ``st.info``…). Em ``st.metric``, em tabela e em rótulo de gráfico o valor
+    **não** passa por Markdown, e ali se usa ``relatorio.dinheiro`` direto.
+    """
+    return f"R\\$ {relatorio.dinheiro(valor)}"
+
+
 def mostrar_aviso(aviso: avisos.Aviso, tipo: str = "warning") -> None:
     """Desenha um aviso obrigatório.
 

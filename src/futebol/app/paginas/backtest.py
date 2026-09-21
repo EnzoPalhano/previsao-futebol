@@ -12,12 +12,16 @@ um número sem o intervalo ao lado.
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
 from futebol import relatorio
 from futebol.app import avisos, dados
 from futebol.app.paginas import comum
+from futebol.avaliacao import graficos
 from futebol.backtest import estrategias, simulador
 
 #: Os limites de EV oferecidos — os mesmos quatro que a Fase 6 mediu (regra 11).
@@ -102,11 +106,18 @@ def mostrar() -> None:
         )
         return
 
-    medida = simulador.medir(apostas, "modelo", amostras_bootstrap=2000, seed=cfg.seed)
+    # ⚠️ O número de amostras do bootstrap **não** é detalhe de desempenho: ele
+    # é parte da medição. Com 2.000, esta tela mostrava IC de -14,90% a -10,91%
+    # para a mesma configuração que o relatório da Fase 6 publica como -14,97% a
+    # -10,89%. Os dois estão certos e ambos são ruído de reamostragem, mas o app
+    # e o documento não podem imprimir intervalos diferentes para a mesma coisa
+    # — é o defeito que a Fase 4 já tinha corrigido uma vez. Então aqui se usa o
+    # padrão de `simulador.medir` (10.000), que é o que o relatório usa. Custo
+    # medido: 1,8 s em vez de 0,4 s, uma vez, atrás do cache.
+    medida = simulador.medir(apostas, "modelo", seed=cfg.seed)
     aleatoria = simulador.medir(
         simulador.aleatorias(do_periodo, len(apostas), seed=cfg.seed),
         "aleatória",
-        amostras_bootstrap=2000,
         seed=cfg.seed,
     )
 
@@ -171,10 +182,40 @@ def mostrar() -> None:
     if evolucao.curva.empty:
         st.warning("A banca acabou antes da primeira liquidação.")
     else:
-        st.line_chart(
-            evolucao.curva.set_index("data")["banca"],
-            y_label="banca (R$)",
-            x_label="",
+        # ⚠️ **Eixo logarítmico, e por isso o gráfico é o do relatório e não um
+        # `st.line_chart`.** Num eixo linear, uma banca em R$ 10 e outra em
+        # R$ 0,10 são a mesma linha colada no chão, e a diferença entre elas é
+        # de cem vezes — o que interessa numa banca é sempre a variação
+        # relativa. `graficos.evolucao_da_banca` já resolve isso, e resolve
+        # também o que vem junto: no eixo log o zero não existe, então a banca
+        # que quebra **sai** do gráfico com um `x` marcando onde, em vez de
+        # virar uma linha reta em R$ 1,00 que afirmaria algo falso.
+        #
+        # Chamar a mesma função do relatório custa um PNG em disco e devolve
+        # uma garantia: a curva da tela é a curva do documento, não uma segunda
+        # versão dela.
+        st.image(
+            str(
+                graficos.evolucao_da_banca(
+                    # Rótulo curto de propósito: o relatório desenha quatro
+                    # curvas e precisa de legenda para distingui-las; aqui há
+                    # **uma**, e o nome completo da configuração ("Stake fixa
+                    # (1% da banca) · Banca fixa (sempre sobre a inicial)")
+                    # atravessava o gráfico inteiro. Quem escolheu a
+                    # configuração acabou de escolhê-la na barra lateral, e ela
+                    # está escrita no subtítulo.
+                    {"banca": evolucao},
+                    Path(tempfile.gettempdir()) / "futebol_app_banca.png",
+                    banca_inicial=float(secao["banca_inicial"]),
+                    titulo="",
+                    subtitulo=(
+                        f"{relatorio.inteiro(medida.n)} apostas · "
+                        f"EV acima de {relatorio.pct(limite, 0)} · "
+                        f"{estrategia.lower()} · {banca.lower()}"
+                    ),
+                )
+            ),
+            width="stretch",
         )
 
     coluna_a, coluna_b, coluna_c = st.columns(3)

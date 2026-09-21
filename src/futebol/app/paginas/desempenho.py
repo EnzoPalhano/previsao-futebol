@@ -8,13 +8,16 @@ que aparece meses depois, quando ninguém lembra qual dos dois está velho.
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
 from futebol import relatorio
 from futebol.app import avisos, dados
 from futebol.app.paginas import comum
-from futebol.avaliacao import metricas, validacao
+from futebol.avaliacao import graficos, metricas, validacao
 
 #: Nome do mercado nas tabelas, o mesmo das Fases 4 e 5.
 NOME_MERCADO = "mercado (fechamento)"
@@ -127,11 +130,24 @@ pode ter acurácia alta e ser inútil para apostar.
     if por_liga.empty:
         st.info("Sem ligas com jogos suficientes para a tabela.", icon="ℹ️")
     else:
-        st.bar_chart(
-            por_liga.set_index("liga")["distancia"],
-            x_label="",
-            y_label="log loss do modelo − log loss do mercado",
-            horizontal=True,
+        # ⚠️ O gráfico é o do relatório da Fase 4, e não um `st.bar_chart`, por
+        # um motivo simples: `_por_liga` ordena por distância, e o `st.bar_chart`
+        # **reordena por nome** ao desenhar. A legenda logo acima convida a ler a
+        # ordem ("barra curta é competição em que a diferença é pequena"), e num
+        # gráfico alfabético essa leitura é impossível — o código ordenava e a
+        # tela jogava a ordenação fora, em silêncio.
+        st.image(
+            str(
+                graficos.distancia_do_mercado(
+                    por_liga,
+                    Path(tempfile.gettempdir()) / "futebol_app_por_liga.png",
+                    coluna_modelo=oficial,
+                    coluna_mercado=NOME_MERCADO,
+                    titulo="",
+                    subtitulo=f"{relatorio.inteiro(len(por_liga))} competições",
+                )
+            ),
+            width="stretch",
         )
 
     st.markdown("### O que a calibração mostra")

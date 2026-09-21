@@ -76,8 +76,8 @@ def mostrar_bilhete(opcao: montador.Opcao) -> None:
     exagero = avisos.exagero_da_multipla(opcao.tamanho)
     st.markdown(
         f"Valor esperado: **{'+' if opcao.ev >= 0 else ''}"
-        f"R$ {relatorio.dinheiro(opcao.ev)}** por bilhete de "
-        f"R$ {relatorio.dinheiro(opcao.valor)}. "
+        f"{comum.reais(opcao.ev)}** por bilhete de "
+        f"{comum.reais(opcao.valor)}. "
         f"Corrigindo pelo exagero medido do modelo ({relatorio.pct(exagero)} num "
         f"bilhete de {opcao.tamanho} jogos), a chance real fica perto de "
         f"**{relatorio.pct(opcao.prob_modelo * (1 - exagero))}**."
@@ -168,7 +168,7 @@ def mostrar() -> None:
         if achado is None:
             st.warning(
                 f"Nem juntando {int(limites['max_selecoes'])} seleções desta rodada "
-                f"dá para chegar a R$ {relatorio.dinheiro(alvo)}. Baixe o alvo ou "
+                f"dá para chegar a {comum.reais(alvo)}. Baixe o alvo ou "
                 "aumente o valor apostado."
             )
         else:

@@ -35,9 +35,21 @@ ROI_FASE_6 = -0.1292
 #: CLV médio medido na Fase 6 — o critério primário do projeto.
 CLV_FASE_6 = -0.0782
 
-#: ROI de apostar ao acaso entre as mesmas candidatas (Fase 6). É a régua: o
-#: modelo perde **mais** que o chute.
-ROI_ALEATORIO_FASE_6 = -0.0688
+#: ROI de apostar em **todas** as 100.945 candidatas, sem modelo nenhum
+#: (Fase 6). É a **régua**, e o nome importa: não é um sorteio, é apostar em
+#: tudo, então o número é exato e não tem ruído de amostra.
+#:
+#: ⚠️ Este é o número que o app mostra nos avisos, e ele **não** é o mesmo que a
+#: página de backtest calcula na tabela "contra quem apostaria no chute". Lá o
+#: app sorteia 21.682 apostas e obtém :data:`ROI_SORTEIO_FASE_6`. São duas
+#: referências diferentes, as duas medidas na Fase 6, e chamar as duas de "ao
+#: acaso" fazia a mesma tela do app exibir 6,9% num lugar e 5,8% em outro.
+ROI_APOSTAR_EM_TUDO_FASE_6 = -0.0688
+
+#: ROI da estratégia aleatória de **mesmo tamanho** que a do modelo: 21.682
+#: apostas sorteadas entre as candidatas (Fase 6). É uma amostra, então carrega
+#: o ruído de uma — por isso a régua acima é a referência que os avisos citam.
+ROI_SORTEIO_FASE_6 = -0.0578
 
 #: Quanto o modelo oficial fica atrás do mercado em log loss (Fase 4).
 DISTANCIA_DO_MERCADO = 0.0226
@@ -98,9 +110,11 @@ EV_POSITIVO_NAO_E_OPORTUNIDADE = Aviso(
     titulo="Valor esperado positivo não quer dizer aposta boa",
     texto=(
         "O projeto testou exatamente esta estratégia em **21.682 apostas** e ela "
-        f"perdeu **{relatorio.pct(abs(ROI_FASE_6))}**. Apostar **ao acaso** entre "
-        "as mesmas oportunidades teria perdido menos: "
-        f"{relatorio.pct(abs(ROI_ALEATORIO_FASE_6))}.\n\n"
+        f"perdeu **{relatorio.pct(abs(ROI_FASE_6))}**. Apostar em **todas** as "
+        "oportunidades, sem modelo nenhum, teria perdido menos: "
+        f"{relatorio.pct(abs(ROI_APOSTAR_EM_TUDO_FASE_6))} — e sortear no chute "
+        f"o mesmo número de apostas, menos ainda: "
+        f"{relatorio.pct(abs(ROI_SORTEIO_FASE_6))}.\n\n"
         "O motivo: como `EV = probabilidade × odd − 1` é multiplicativo na odd, "
         "um mesmo erro do modelo produz EV alto no azarão e quase nada no "
         "favorito — e o azarão é justamente onde a casa cobra a maior comissão "

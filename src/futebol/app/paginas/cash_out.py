@@ -51,7 +51,7 @@ def mostrar() -> None:
 
     premio = valor * odd_total
     st.caption(
-        f"Se tudo der certo você recebe **R$ {relatorio.dinheiro(premio)}**."
+        f"Se tudo der certo você recebe **{comum.reais(premio)}**."
     )
 
     st.markdown("### As seleções que faltam")

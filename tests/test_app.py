@@ -31,6 +31,7 @@ from futebol.app.paginas import (
     backtest,
     cash_out,
     comparar,
+    comum,
     desempenho,
     inicio,
     multiplas,
@@ -109,6 +110,84 @@ def test_toda_pagina_de_aposta_tem_rodape_de_jogo_responsavel() -> None:
         )
 
 
+# ----------------------------------------------------------------------------
+# Defeitos que já apareceram na tela, e que não podem voltar
+# ----------------------------------------------------------------------------
+def test_dinheiro_em_markdown_escapa_o_cifrao() -> None:
+    r"""O cifrão abre fórmula LaTeX no Markdown do Streamlit.
+
+    Duas quantias na mesma frase — "ganha R$ 6,10 por bilhete de R$ 10,00" —
+    faziam tudo entre os dois cifrões virar equação: o negrito parava de
+    funcionar e os ``**`` apareciam crus. Era o que a linha de valor esperado da
+    página de múltiplas mostrava.
+    """
+    assert comum.reais(6.1).startswith("R\\$")
+
+
+def test_a_pagina_de_multiplas_nao_escreve_cifrao_cru_em_markdown() -> None:
+    """A correção acima só vale se a linha de valor esperado usar o ajudante.
+
+    ⚠️ O teste olha **a chamada de ``st.markdown``**, e não o módulo inteiro: o
+    ``st.metric`` logo acima escreve ``R$`` cru de propósito e está certo, porque
+    métrica não passa por Markdown. A regra não é "nunca escreva cifrão": é
+    "nunca escreva cifrão cru onde o Markdown vai ler".
+    """
+    fonte = inspect.getsource(multiplas.mostrar_bilhete)
+    markdown = fonte.split("st.markdown(", 1)[1]
+    assert "comum.reais(" in markdown
+    assert "R$ {" not in markdown, "cifrão cru dentro de texto em Markdown"
+
+
+def test_o_backtest_mede_com_o_mesmo_bootstrap_do_relatorio() -> None:
+    """Tela e documento não podem publicar intervalos diferentes.
+
+    Com ``amostras_bootstrap=2000`` a tela dava IC de -14,90% a -10,91% para a
+    mesma configuração que o relatório da Fase 6 publica como -14,97% a
+    -10,89%. Os dois eram ruído de reamostragem, e os dois estavam certos — mas
+    a mesma medição não pode sair com dois valores. O jeito de garantir é a
+    página não escolher: usa o padrão de ``simulador.medir``, que é o que o
+    relatório usa.
+    """
+    assert "amostras_bootstrap" not in inspect.getsource(backtest)
+
+
+def test_a_banca_e_desenhada_em_escala_logaritmica() -> None:
+    """Eixo linear mente sobre banca: R$ 10 e R$ 0,10 viram a mesma linha.
+
+    A página reaproveita o gráfico do relatório em vez de um ``st.line_chart``,
+    que só desenha em escala linear.
+    """
+    fonte = inspect.getsource(backtest)
+    assert "graficos.evolucao_da_banca" in fonte
+    assert "st.line_chart(" not in fonte
+
+
+def test_o_grafico_por_competicao_preserva_a_ordem() -> None:
+    """``st.bar_chart`` reordena por nome e jogava fora a ordenação do código.
+
+    A legenda da seção convida a ler a ordem ("barra curta é competição em que a
+    diferença é pequena"), e num gráfico alfabético essa leitura é impossível.
+    """
+    fonte = inspect.getsource(desempenho)
+    assert "graficos.distancia_do_mercado" in fonte
+    assert "st.bar_chart(" not in fonte
+
+
+def test_o_app_declara_que_a_pagina_esta_em_portugues() -> None:
+    """Sem isso o Chrome traduz o app de português para português.
+
+    O Streamlit serve ``<html lang="en">``. O navegador acredita na declaração,
+    não no texto, e passa um tradutor automático por cima: "Apostas envolvem
+    risco real de perda" virava "Apostas de envolvimento risco real de perda", e
+    "Início" virava "Não se trata de uma questão de". Num app qualquer seria
+    feio; aqui adultera os **avisos obrigatórios**, que são o produto da fase.
+    """
+    from futebol.app import streamlit_app
+
+    fonte = inspect.getsource(streamlit_app.declarar_idioma)
+    assert "pt-BR" in fonte
+
+
 def test_o_exagero_da_multipla_cresce_com_o_tamanho() -> None:
     """É o erro por perna elevado à potência do bilhete (Fase 7)."""
     valores = [avisos.exagero_da_multipla(k) for k in range(1, 9)]
@@ -126,7 +205,13 @@ def test_os_numeros_dos_avisos_batem_com_os_relatorios() -> None:
     if not fase6.is_file():
         pytest.skip("relatorio da Fase 6 ainda nao foi gerado")
     texto = fase6.read_text(encoding="utf-8")
-    for valor in (avisos.ROI_FASE_6, avisos.CLV_FASE_6, avisos.ROI_ALEATORIO_FASE_6):
+    valores = (
+        avisos.ROI_FASE_6,
+        avisos.CLV_FASE_6,
+        avisos.ROI_APOSTAR_EM_TUDO_FASE_6,
+        avisos.ROI_SORTEIO_FASE_6,
+    )
+    for valor in valores:
         citado = f"{abs(valor) * 100:.2f}".replace(".", ",")
         assert citado in texto, f"{citado}% nao aparece no relatorio da Fase 6"
 

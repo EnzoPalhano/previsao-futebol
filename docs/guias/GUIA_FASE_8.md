@@ -297,6 +297,16 @@ Sua versão do Streamlit é antiga. O app usa recursos que existem a partir da
 pip install -e ".[dev]" --upgrade
 ```
 
+### O navegador ofereceu "traduzir esta página" — ou traduziu sozinho
+
+Pode aceitar? **Não.** O texto já está em português, e o tradutor automático
+reescreve o que já está escrito: "Apostas envolvem risco real de perda" vira
+"Apostas de envolvimento risco real de perda", e "Início" vira "Não se trata de
+uma questão de". Os avisos obrigatórios saem adulterados.
+
+O app declara o idioma sozinho para que isso não aconteça. Se mesmo assim o seu
+navegador insistir, clique em "Mostrar original".
+
 ### A porta 8501 já está em uso
 
 Outro app está aberto. Feche a outra janela do PowerShell, ou rode:
@@ -325,15 +335,15 @@ de novo.
 - [ ] o pé de **todas** as telas traz o aviso de jogo responsável com o CVV
 - [ ] o `config.yaml` **não mudou** — a Fase 8 não mexe em modelo nenhum
       (regra 9)
-- [ ] `pytest` mostra **609 passed** (ou 608 passed + 1 skipped, se a sua rede
+- [ ] `pytest` mostra **615 passed** (ou 614 passed + 1 skipped, se a sua rede
       bloquear o site da fonte — o teste de rede vira *skip*, e isso é esperado)
 - [ ] `ruff check .` mostra **All checks passed!**
 - [ ] `git tag` mostra `fase-8`
 
 ⚠️ Se você clonou o projeto num computador novo e ainda não rodou
-`preparar_dados.py`, **9 dos 19 testes do app aparecem como `skipped`** em vez de
+`preparar_dados.py`, **9 dos 25 testes do app aparecem como `skipped`** em vez de
 falhar. Isso é esperado: eles precisam da tabela de jogos, que não vai para o
-Git. Os testes de aviso não dependem de dado nenhum e rodam sempre.
+Git. Os outros 16 não dependem de dado nenhum e rodam sempre.
 
 Se todos estiverem marcados, **a Fase 8 está concluída**.
 

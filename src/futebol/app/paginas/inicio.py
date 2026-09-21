@@ -45,10 +45,12 @@ def mostrar() -> None:
 
     st.markdown(
         f"""
-**E o achado mais interessante:** apostar **ao acaso** entre as mesmas
-oportunidades teria perdido menos
-({relatorio.pct(abs(avisos.ROI_ALEATORIO_FASE_6))}) do que apostar seguindo o
-modelo ({relatorio.pct(abs(avisos.ROI_FASE_6))}). O filtro de valor esperado não
+**E o achado mais interessante:** apostar em **todas** as oportunidades, sem
+modelo nenhum, teria perdido menos
+({relatorio.pct(abs(avisos.ROI_APOSTAR_EM_TUDO_FASE_6))}) do que apostar seguindo
+o modelo ({relatorio.pct(abs(avisos.ROI_FASE_6))}) — e sortear no chute o mesmo
+número de apostas teria perdido menos ainda
+({relatorio.pct(abs(avisos.ROI_SORTEIO_FASE_6))}). O filtro de valor esperado não
 seleciona onde o modelo sabe mais — seleciona **onde ele erra para cima**, que é
 sistematicamente o azarão, que é onde a casa cobra mais caro.
 
