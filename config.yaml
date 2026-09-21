@@ -167,5 +167,12 @@ noticias:
   # api-football.com/pricing). A cota zera as 00:00 UTC e o que sobra nao
   # acumula. Estava 200 aqui, que estouraria a cota silenciosamente.
   limite_chamadas_dia: 100
+  cache_horas: 4                # a API atualiza lesoes a cada 4h; cachear mais
+                                # que isso guardaria informacao velha
+  # Modelo que LE as noticias e devolve JSON. Ele nao calcula probabilidade
+  # nenhuma - quem faz isso e o Dixon-Coles. A tarefa e leitura de texto curto,
+  # entao um modelo menor (claude-haiku-4-5) da conta e custa menos; o padrao
+  # e o mais capaz.
+  modelo_extracao: "claude-opus-5"
   peso_duvida: 0.5              # jogador "duvida" pesa metade de um "fora"
   ajuste_maximo: 0.25           # limite de reducao da forca do time

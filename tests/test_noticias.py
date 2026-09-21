@@ -469,3 +469,151 @@ def test_o_limite_do_config_e_o_do_plano_gratuito(cfg) -> None:
     Com 200, o projeto estouraria a cota silenciosamente na metade do caminho.
     """
     assert int(cfg.secao("noticias")["limite_chamadas_dia"]) <= 100
+
+
+# ----------------------------------------------------------------------------
+# A extração com LLM
+# ----------------------------------------------------------------------------
+def _noticia(titulo: str = "N1"):
+    from futebol.noticias.extracao import Noticia
+
+    return Noticia(
+        titulo=titulo,
+        texto="texto qualquer",
+        fonte="https://exemplo.invalido/n1",
+        data=date(2026, 9, 20),
+    )
+
+
+def test_o_extrator_converte_o_json_em_desfalque() -> None:
+    from futebol.noticias import extracao
+
+    extrator = extracao.ExtratorFalso(
+        respostas={
+            "N1": [
+                {
+                    "jogador": "Fulano",
+                    "time": "ENG:Arsenal",
+                    "status": "fora",
+                    "motivo": "lesão na coxa",
+                    "posicao": "atacante",
+                    "confianca": 0.9,
+                }
+            ]
+        }
+    )
+    achados = extrator.extrair([_noticia()])
+    assert len(achados) == 1
+    assert achados[0].jogador.nome == "Fulano"
+    assert achados[0].jogador.setor == "ataque"
+    assert achados[0].confianca == 0.9
+    assert achados[0].fonte.startswith("https://")
+
+
+def test_o_llm_nao_da_peso_ao_jogador() -> None:
+    """⚠️ A fronteira que este módulo existe para não cruzar.
+
+    O LLM lê texto. Quem dá peso é `importancia`, com as estatísticas do
+    jogador — o LLM não tem como saber quanto um jogador vale para o time, e
+    deixá-lo estimar produziria um número confiante e sem origem.
+    """
+    from futebol.noticias import extracao
+
+    convertido = extracao.converter(
+        {
+            "jogador": "Craque",
+            "time": "ENG:Arsenal",
+            "status": "fora",
+            "motivo": "",
+            "posicao": "atacante",
+            "confianca": 1.0,
+        },
+        _noticia(),
+    )
+    assert convertido is not None
+    assert convertido.jogador.peso == 0.0, "o LLM atribuiu peso"
+
+
+def test_item_sem_time_e_descartado_e_nao_completado() -> None:
+    """Desfalque com o time chutado é pior que nenhum desfalque (regra 14)."""
+    from futebol.noticias import extracao
+
+    assert extracao.converter(
+        {"jogador": "X", "time": "", "status": "fora", "confianca": 1.0}, _noticia()
+    ) is None
+    assert extracao.converter(
+        {"jogador": "", "time": "ENG:Arsenal", "status": "fora"}, _noticia()
+    ) is None
+
+
+def test_status_invalido_e_descartado() -> None:
+    from futebol.noticias import extracao
+
+    assert extracao.converter(
+        {"jogador": "X", "time": "T", "status": "talvez", "confianca": 1.0},
+        _noticia(),
+    ) is None
+
+
+def test_confianca_estranha_nao_quebra_nem_estoura() -> None:
+    """A confiança vira peso do ajuste; fora de [0,1] envenenaria a conta."""
+    from futebol.noticias import extracao
+
+    base = {"jogador": "X", "time": "T", "status": "fora", "posicao": ""}
+    assert extracao.converter({**base, "confianca": 9.0}, _noticia()).confianca == 1.0
+    assert extracao.converter({**base, "confianca": -5}, _noticia()).confianca == 0.0
+    assert extracao.converter({**base, "confianca": "oi"}, _noticia()).confianca == 0.5
+
+
+def test_noticia_sem_desfalque_devolve_lista_vazia() -> None:
+    """É o caso comum, e é uma resposta correta — não um erro."""
+    from futebol.noticias import extracao
+
+    extrator = extracao.ExtratorFalso(respostas={})
+    assert extrator.extrair([_noticia()]) == []
+
+
+def test_o_esquema_obriga_os_campos_que_o_ajuste_usa() -> None:
+    """A garantia vem do JSON Schema, não de pedir educadamente no prompt.
+
+    "Responda só JSON" funciona quase sempre — e "quase sempre", num pipeline
+    que roda sozinho toda semana, significa quebrar numa quinta-feira qualquer.
+    """
+    from futebol.noticias import extracao
+
+    item = extracao.ESQUEMA["properties"]["desfalques"]["items"]
+    assert set(item["required"]) >= {"jogador", "time", "status", "confianca"}
+    assert item["additionalProperties"] is False
+    assert item["properties"]["status"]["enum"] == ["fora", "duvida", "volta"]
+
+
+def test_a_instrucao_proibe_o_llm_de_opinar_sobre_o_jogo() -> None:
+    """O LLM lê texto; a probabilidade sai do Dixon-Coles."""
+    from futebol.noticias import extracao
+
+    instrucao = extracao.INSTRUCAO.lower()
+    assert "não estima probabilidade" in instrucao
+    assert "não sugere aposta" in instrucao
+
+
+def test_sem_chave_da_anthropic_a_mensagem_ensina(cfg, monkeypatch) -> None:
+    from futebol.noticias import extracao
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    with pytest.raises(extracao.SemChaveDaAnthropic, match="ANTHROPIC_API_KEY"):
+        extracao.Extrator.do_ambiente(cfg)
+
+
+def test_recusa_do_modelo_nao_vira_silencio() -> None:
+    """Numa recusa o conteúdo pode não existir.
+
+    Tratar isso como "nenhum desfalque" faria uma falha virar silêncio — e o
+    pipeline seguiria achando que simplesmente não há lesão nenhuma.
+    """
+    from futebol.noticias import extracao
+
+    class RespostaRecusada:
+        stop_reason = "refusal"
+        content: list = []
+
+    assert extracao.Extrator._converter_resposta(RespostaRecusada(), _noticia()) == []
