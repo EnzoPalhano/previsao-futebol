@@ -163,6 +163,9 @@ avaliacao:
 noticias:
   dias_a_frente: 7
   janela_noticias_horas: 72
-  limite_chamadas_dia: 200
+  # 100/dia e o teto do plano GRATUITO da API-Football (confere em
+  # api-football.com/pricing). A cota zera as 00:00 UTC e o que sobra nao
+  # acumula. Estava 200 aqui, que estouraria a cota silenciosamente.
+  limite_chamadas_dia: 100
   peso_duvida: 0.5              # jogador "duvida" pesa metade de um "fora"
   ajuste_maximo: 0.25           # limite de reducao da forca do time

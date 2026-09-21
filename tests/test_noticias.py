@@ -21,7 +21,7 @@ import pytest
 from futebol.config import carregar_config
 from futebol.noticias import ajuste as ajuste_mod
 from futebol.noticias import importancia
-from futebol.noticias.tipos import Desfalque, Jogador
+from futebol.noticias.tipos import Desfalque, Jogador, JogoAlvo
 
 
 @pytest.fixture(scope="module")
@@ -356,3 +356,116 @@ def test_time_sem_desfalque_preve_exatamente_igual(cfg, modelo_treinado) -> None
     ajustado = ajuste_mod.aplicar(modelo, {})
     _, depois, _ = _prever(ajustado, da_liga, corte)
     assert depois == antes
+
+
+# ----------------------------------------------------------------------------
+# As fontes: cota, cache e casamento de times
+# ----------------------------------------------------------------------------
+def test_o_orcamento_trava_antes_de_estourar(tmp_path) -> None:
+    """A trava age ANTES da chamada.
+
+    Estourar a cota de graça derruba a conta pelo resto do dia, e ela só volta
+    às 00:00 UTC.
+    """
+    from futebol.noticias import fontes
+
+    orcamento = fontes.Orcamento(limite=3, caminho=tmp_path / "o.json")
+    for _ in range(3):
+        orcamento.gastar()
+    assert orcamento.restam == 0
+    with pytest.raises(fontes.SemCota, match="acabou"):
+        orcamento.gastar()
+
+
+def test_o_orcamento_sobrevive_a_reinicio(tmp_path) -> None:
+    """⚠️ Guardado só em memória, tres execucoes de 40 passariam de 100.
+
+    Cada execução do script começaria do zero e ninguém perceberia — que é
+    exatamente o acidente que o limite existe para evitar.
+    """
+    from futebol.noticias import fontes
+
+    caminho = tmp_path / "o.json"
+    primeiro = fontes.Orcamento(limite=5, caminho=caminho)
+    primeiro.gastar(4)
+
+    segundo = fontes.Orcamento(limite=5, caminho=caminho)
+    assert segundo.usadas == 4, "o contador nao sobreviveu ao reinicio"
+    assert segundo.restam == 1
+
+
+def test_o_orcamento_de_ontem_nao_conta_hoje(tmp_path) -> None:
+    """A cota zera às 00:00 UTC."""
+    import json
+
+    from futebol.noticias import fontes
+
+    caminho = tmp_path / "o.json"
+    caminho.write_text(json.dumps({"dia": "1999-01-01", "usadas": 99}))
+    assert fontes.Orcamento(limite=100, caminho=caminho).usadas == 0
+
+
+def test_o_cache_expira(tmp_path) -> None:
+    import os
+    import time as relogio
+
+    from futebol.noticias import fontes
+
+    cache = fontes.Cache(pasta=tmp_path, validade_horas=1.0)
+    cache.gravar("x", {"a": 1})
+    assert cache.ler("x") == {"a": 1}
+
+    # Envelhece o arquivo em duas horas.
+    antigo = relogio.time() - 2 * 3600
+    os.utime(tmp_path / "x.json", (antigo, antigo))
+    assert cache.ler("x") is None
+
+
+def test_a_fonte_falsa_so_devolve_os_times_alvo() -> None:
+    """O pipeline filtra antes de buscar, e a fonte falsa imita isso.
+
+    Se ela devolvesse tudo, os testes não pegariam um filtro quebrado na fonte
+    de verdade.
+    """
+    from futebol.noticias import fontes
+
+    alvo = _desfalque("A", time="ENG:Arsenal")
+    intruso = _desfalque("B", time="ESP:Barcelona")
+    fonte = fontes.FonteFalsa(respostas=[alvo, intruso])
+
+    jogo = JogoAlvo("E0", "ENG:Arsenal", "ENG:Chelsea", date(2026, 9, 25))
+    achados = fonte.desfalques([jogo])
+    assert [d.jogador.nome for d in achados] == ["A"]
+
+
+def test_time_que_nao_casa_e_descartado_e_nao_chutado() -> None:
+    """⚠️ Regra 14 outra vez: associar o desfalque ao time errado é o pior erro.
+
+    Os vocabulários da API e do projeto são diferentes e ninguém mapeou um no
+    outro. Quem não casa sai da lista; chutar daria uma previsão bem formatada
+    sobre o time errado.
+    """
+    from futebol.noticias.fontes import ApiFutebol
+
+    alvo = {"ENG:Arsenal", "ENG:Chelsea"}
+    assert ApiFutebol._casar_time("Arsenal", alvo) == "ENG:Arsenal"
+    assert ApiFutebol._casar_time("ARSENAL", alvo) == "ENG:Arsenal"
+    assert ApiFutebol._casar_time("Nottingham Forest", alvo) is None
+    assert ApiFutebol._casar_time("", alvo) is None
+
+
+def test_sem_chave_a_mensagem_ensina_o_que_fazer(cfg, monkeypatch) -> None:
+    """Não é erro de programação: é configuração que falta."""
+    from futebol.noticias import fontes
+
+    monkeypatch.delenv("API_FUTEBOL_CHAVE", raising=False)
+    with pytest.raises(fontes.SemChave, match="API_FUTEBOL_CHAVE"):
+        fontes.ApiFutebol.do_ambiente(cfg)
+
+
+def test_o_limite_do_config_e_o_do_plano_gratuito(cfg) -> None:
+    """⚠️ Estava 200 e o plano gratuito dá 100.
+
+    Com 200, o projeto estouraria a cota silenciosamente na metade do caminho.
+    """
+    assert int(cfg.secao("noticias")["limite_chamadas_dia"]) <= 100
