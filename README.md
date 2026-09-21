@@ -34,8 +34,8 @@ existe (ou não) vantagem sobre o mercado.
 | 5 | Features e machine learning | ✅ concluída |
 | 6 | Backtest de apostas | ✅ concluída |
 | 7 | Múltiplas e cash out | ✅ concluída |
-| 8 | Aplicativo Streamlit | ⏳ próxima |
-| 9 | Teste final | — |
+| 8 | Aplicativo Streamlit | ✅ concluída |
+| 9 | Teste final | ⏳ próxima |
 | 10 | Notícias e desfalques | — |
 
 ---
@@ -67,8 +67,9 @@ Os guias completos, escritos para quem nunca programou:
 [Fase 3 — o primeiro modelo](docs/guias/GUIA_FASE_3.md),
 [Fase 4 — a hora da verdade](docs/guias/GUIA_FASE_4.md) e
 [Fase 5 — quando a resposta é "não"](docs/guias/GUIA_FASE_5.md),
-[Fase 6 — teria dado lucro?](docs/guias/GUIA_FASE_6.md) e
-[Fase 7 — por que a casa adora múltiplas](docs/guias/GUIA_FASE_7.md).
+[Fase 6 — teria dado lucro?](docs/guias/GUIA_FASE_6.md),
+[Fase 7 — por que a casa adora múltiplas](docs/guias/GUIA_FASE_7.md) e
+[Fase 8 — o aplicativo](docs/guias/GUIA_FASE_8.md).
 
 ---
 
@@ -94,7 +95,7 @@ Os guias completos, escritos para quem nunca programou:
 | Rodar o backtest | `python scripts/backtest.py` |
 | Gerar o relatório da Fase 6 | `python scripts/relatorio_fase6.py` |
 | Gerar o relatório da Fase 7 | `python scripts/relatorio_fase7.py` |
-| Abrir o app | `streamlit run src/futebol/app/streamlit_app.py` *(Fase 8)* |
+| Abrir o app | `streamlit run src/futebol/app/streamlit_app.py` |
 
 ---
 
@@ -223,6 +224,39 @@ funciona como uma lupa do erro do modelo.**
 E o cash out cobra a mesma taxa não importa quando é apertado: o valor esperado de sacar é
 o de não sacar vezes `(1 − taxa)`, para qualquer momento de saque. Isso é uma identidade,
 não um achado empírico.
+
+---
+
+## O aplicativo
+
+```powershell
+streamlit run src/futebol/app/streamlit_app.py
+```
+
+Sete telas: as probabilidades de um confronto, o valor esperado contra as odds
+que você digitar, o backtest com a banca ao longo do tempo, o montador de
+múltiplas, o valor justo de um cash out e as tabelas de desempenho dos modelos.
+
+⚠️ **O app é a primeira entrega que alguém pode usar sem ler relatório nenhum**, e
+isso define o desenho dele. Uma tela que mostra "68% de chance" e "valor esperado
++7%" sem contexto é, na prática, uma recomendação de aposta — e este projeto
+mediu, em 21.682 apostas, que seria uma recomendação ruim. Então:
+
+- a **tela de abertura dá o veredito antes da ferramenta**: ROI −12,92%, CLV
+  −7,82%, zero de 18 ligas com lucro;
+- os avisos moram num **módulo só** (`src/futebol/app/avisos.py`), cada um com o
+  número medido e o relatório de onde ele saiu. Há teste que exige cada aviso na
+  tela correspondente, e outro que confere os números contra o próprio relatório —
+  um aviso apagado numa reescrita derruba o `pytest` em vez de sumir calado;
+- **nenhuma métrica aparece sem o intervalo de confiança e o número de apostas**,
+  porque o componente que as desenha não sabe desenhar um número sozinho;
+- o limite de valor esperado é uma lista dos **quatro que a Fase 6 mediu**, não um
+  campo livre — campo livre seria um convite a procurar o número que deixa o
+  gráfico bonito.
+
+O app **não tem matemática própria**: todo número vem do mesmo código que gerou os
+relatórios, e a tela de desempenho refaz as contas a partir do mesmo cache de
+previsões em vez de copiar valores. Tela e documento não têm como discordar.
 
 ---
 
