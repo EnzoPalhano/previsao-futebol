@@ -617,3 +617,230 @@ def test_recusa_do_modelo_nao_vira_silencio() -> None:
         content: list = []
 
     assert extracao.Extrator._converter_resposta(RespostaRecusada(), _noticia()) == []
+
+
+# ----------------------------------------------------------------------------
+# Os proximos jogos
+# ----------------------------------------------------------------------------
+CSV_FIXTURES = """Div,Date,Time,HomeTeam,AwayTeam
+E0,25/09/2026,15:00,Arsenal,Chelsea
+E0,26/09/2026,17:30,Liverpool,Everton
+SC1,25/09/2026,15:00,Falkirk,Ayr
+E0,30/12/2026,15:00,Arsenal,Tottenham
+E0,,15:00,Fulham,Brentford
+E0,25/09/2026,15:00,,Wolves
+"""
+
+
+def test_os_jogos_alvo_respeitam_a_janela_e_as_ligas(cfg) -> None:
+    """Só as 18 aprovadas (regra 12), e só os próximos dias.
+
+    A SC1 do CSV é a segunda divisão escocesa, reprovada no filtro da Fase 2; o
+    jogo de dezembro está fora da janela de 7 dias.
+    """
+    from futebol.noticias import jogos_alvo
+
+    achados = jogos_alvo.ler(CSV_FIXTURES, cfg, hoje=date(2026, 9, 24), dias=7)
+    nomes = [(j.liga, j.mandante, j.visitante) for j in achados]
+
+    assert len(achados) == 2, f"esperava 2, veio {nomes}"
+    assert all(j.liga == "E0" for j in achados), "liga reprovada entrou"
+    assert all(date(2026, 9, 24) <= j.data <= date(2026, 10, 1) for j in achados)
+
+
+def test_o_jogo_alvo_usa_a_chave_pais_nome(cfg) -> None:
+    """Regra 14.
+
+    Guardar o nome solto faria o ajuste procurar um time que o modelo não
+    conhece — e não achar nada, em silêncio.
+    """
+    from futebol.noticias import jogos_alvo
+
+    achados = jogos_alvo.ler(CSV_FIXTURES, cfg, hoje=date(2026, 9, 24), dias=7)
+    for jogo in achados:
+        assert ":" in jogo.mandante, f"{jogo.mandante} sem prefixo de pais"
+        assert ":" in jogo.visitante
+
+
+def test_linha_sem_data_ou_sem_time_e_pulada(cfg) -> None:
+    """O arquivo do football-data traz linhas incompletas."""
+    from futebol.noticias import jogos_alvo
+
+    achados = jogos_alvo.ler(CSV_FIXTURES, cfg, hoje=date(2026, 9, 24), dias=7)
+    assert all(j.mandante.split(":")[-1] for j in achados)
+
+
+def test_a_lista_de_times_alvo_nao_repete(cfg) -> None:
+    from futebol.noticias import jogos_alvo
+
+    achados = jogos_alvo.ler(CSV_FIXTURES, cfg, hoje=date(2026, 9, 24), dias=7)
+    assert len(jogos_alvo.times(achados)) == 4
+
+
+# ----------------------------------------------------------------------------
+# O caderno do paper trading
+# ----------------------------------------------------------------------------
+def _cfg_temporario(cfg, tmp_path):
+    """Um config com a raiz num diretório descartável."""
+
+    class ConfigTemporario:
+        def __init__(self, original, raiz):
+            self.raiz = raiz
+            self.bruto = original.bruto
+            self.seed = original.seed
+
+        def secao(self, nome):
+            return self.bruto[nome]
+
+    return ConfigTemporario(cfg, tmp_path)
+
+
+def _linhas(n: int, *, com_ajuste: bool, ajustado_melhor: bool) -> list[dict]:
+    """n jogos em que o mandante sempre venceu."""
+    linhas = []
+    for i in range(n):
+        p_cru = 0.45
+        p_aj = 0.55 if ajustado_melhor else 0.35
+        linhas.append(
+            {
+                "data_do_jogo": f"2026-09-{(i % 28) + 1:02d}",
+                "liga": "E0",
+                "mandante": "ENG:A",
+                "visitante": f"ENG:B{i}",
+                "prob_H_cru": p_cru,
+                "prob_D_cru": 0.30,
+                "prob_A_cru": 0.25,
+                "prob_H_ajustado": p_aj,
+                "prob_D_ajustado": 0.30,
+                "prob_A_ajustado": round(1 - p_aj - 0.30, 4),
+                "ajuste_mandante_ataque": 0.1 if com_ajuste else 0.0,
+                "ajuste_mandante_defesa": 0.0,
+                "ajuste_visitante_ataque": 0.0,
+                "ajuste_visitante_defesa": 0.0,
+                "desfalques": "Fulano (fora)" if com_ajuste else "",
+                "resultado": "H",
+            }
+        )
+    return linhas
+
+
+def test_o_caderno_vazio_nao_inventa_conclusao(cfg, tmp_path) -> None:
+    from futebol.noticias import registro
+
+    resultado = registro.avaliar(_cfg_temporario(cfg, tmp_path))
+    assert resultado.n == 0
+    assert "Nenhum jogo com resultado" in resultado.veredito
+
+
+def test_o_caderno_acrescenta_e_nunca_reescreve(cfg, tmp_path) -> None:
+    """⚠️ Caderno reescrevível pode ser corrigido depois de ver o resultado."""
+    from futebol.noticias import registro
+
+    temporario = _cfg_temporario(cfg, tmp_path)
+    registro.anotar(temporario, _linhas(2, com_ajuste=True, ajustado_melhor=True))
+    registro.anotar(temporario, _linhas(3, com_ajuste=True, ajustado_melhor=True))
+    assert len(registro.carregar(temporario)) == 5
+
+
+def test_a_primeira_gravacao_e_a_que_vale(cfg, tmp_path) -> None:
+    """Ficar com a última premiaria quem roda de novo após a escalação sair."""
+    from futebol.noticias import registro
+
+    temporario = _cfg_temporario(cfg, tmp_path)
+    registro.anotar(temporario, _linhas(1, com_ajuste=True, ajustado_melhor=True))
+    registro.anotar(temporario, _linhas(1, com_ajuste=True, ajustado_melhor=False))
+
+    caderno = registro.carregar(temporario)
+    assert len(caderno) == 2
+
+    unica = registro.primeira_gravacao(caderno)
+    assert len(unica) == 1
+    assert float(unica.iloc[0]["prob_H_ajustado"]) == 0.55, "ficou com a segunda"
+
+
+def test_o_resultado_fica_vazio_ate_o_jogo_acontecer(cfg) -> None:
+    """Preencher na hora da previsão seria invenção: o jogo não aconteceu."""
+    from futebol.noticias import registro
+    from futebol.noticias.tipos import Ajuste
+
+    jogo = JogoAlvo("E0", "ENG:A", "ENG:B", date(2026, 9, 25))
+    linha = registro.linha_de_jogo(
+        jogo,
+        {"H": 0.5, "D": 0.3, "A": 0.2},
+        {"H": 0.55, "D": 0.28, "A": 0.17},
+        Ajuste("ENG:A"),
+        Ajuste("ENG:B"),
+    )
+    assert linha["resultado"] == ""
+
+
+def test_sem_ajuste_nenhum_nao_ha_o_que_comparar(cfg, tmp_path) -> None:
+    """Com as duas colunas iguais, qualquer número seria ruído puro."""
+    from futebol.noticias import registro
+
+    temporario = _cfg_temporario(cfg, tmp_path)
+    registro.anotar(temporario, _linhas(40, com_ajuste=False, ajustado_melhor=True))
+    resultado = registro.avaliar(temporario)
+    assert resultado.com_ajuste == 0
+    assert "não há o que comparar" in resultado.veredito.lower()
+
+
+def test_amostra_pequena_diz_ainda_nao_da_para_saber(cfg, tmp_path) -> None:
+    """⚠️ A regra da especificação, virada código."""
+    from futebol.noticias import registro
+
+    temporario = _cfg_temporario(cfg, tmp_path)
+    registro.anotar(temporario, _linhas(5, com_ajuste=True, ajustado_melhor=True))
+    resultado = registro.avaliar(temporario)
+    assert "ainda não dá para saber" in resultado.veredito.lower()
+
+
+def test_melhora_consistente_e_chamada_de_indicio(cfg, tmp_path) -> None:
+    """Nunca "funciona": a amostra é pequena por construção."""
+    from futebol.noticias import registro
+
+    temporario = _cfg_temporario(cfg, tmp_path)
+    registro.anotar(temporario, _linhas(60, com_ajuste=True, ajustado_melhor=True))
+    resultado = registro.avaliar(temporario)
+    assert resultado.diferenca < 0, "melhorar tem de dar diferenca NEGATIVA"
+    assert "indício" in resultado.veredito.lower()
+    assert "prova" in resultado.veredito.lower()
+
+
+def test_piora_consistente_manda_desligar_e_nao_afinar(cfg, tmp_path) -> None:
+    """⚠️ Afinar até ficar bonito é o sobreajuste que o projeto inteiro evita."""
+    from futebol.noticias import registro
+
+    temporario = _cfg_temporario(cfg, tmp_path)
+    registro.anotar(temporario, _linhas(60, com_ajuste=True, ajustado_melhor=False))
+    resultado = registro.avaliar(temporario)
+    assert resultado.diferenca > 0
+    assert "desligá-lo" in resultado.veredito
+
+
+def test_preencher_resultados_completa_so_o_que_aconteceu(cfg, tmp_path) -> None:
+    import pandas as pd
+
+    from futebol.noticias import registro
+
+    temporario = _cfg_temporario(cfg, tmp_path)
+    linhas = _linhas(2, com_ajuste=True, ajustado_melhor=True)
+    for linha in linhas:
+        linha["resultado"] = ""
+    registro.anotar(temporario, linhas)
+
+    jogos = pd.DataFrame(
+        [
+            {
+                "data": linhas[0]["data_do_jogo"],
+                "liga": "E0",
+                "mandante": "ENG:A",
+                "visitante": "ENG:B0",
+                "resultado": "H",
+            }
+        ]
+    )
+    assert registro.preencher_resultados(temporario, jogos) == 1
+
+    caderno = registro.carregar(temporario)
+    assert (caderno["resultado"] == "H").sum() == 1
