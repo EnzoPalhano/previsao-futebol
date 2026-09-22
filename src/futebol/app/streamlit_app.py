@@ -18,7 +18,6 @@ gerou os relatórios — e é por isso que a tela não pode discordar do documen
 from __future__ import annotations
 
 import streamlit as st
-import streamlit.components.v1 as componentes
 
 from futebol.app import dados
 from futebol.app.paginas import (
@@ -73,11 +72,32 @@ def declarar_idioma() -> None:
 
     O componente é um iframe de altura zero servido da mesma origem, que é o
     único caminho que o Streamlit deixa aberto para tocar no ``<html>`` da
-    página. ``_top`` alcança o documento de fora do iframe.
+    página. ``window.top`` alcança o documento de fora do iframe.
+
+    ⚠️ Usa ``st.iframe`` e **não** ``st.components.v1.html``, que está
+    depreciado com remoção marcada para depois de 01/06/2026 — data que já
+    passou. O aviso só aparece no log do servidor, então o dia em que o Streamlit
+    removesse a função de verdade, o app continuaria subindo e a declaração de
+    idioma sumiria em silêncio: o Chrome voltaria a traduzir os avisos
+    obrigatórios de português para português, e nada acusaria.
     """
-    componentes.html(
-        "<script>window.top.document.documentElement.lang = 'pt-BR';</script>",
-        height=0,
+    st.iframe(
+        "<script>"
+        "const raiz = window.top.document.documentElement;"
+        "raiz.lang = 'pt-BR';"
+        # ⚠️ **Dois sinais, e o segundo é o que aguenta o tranco.** O `lang` só é
+        # definido **depois** que a página renderiza — o Streamlit não deixa
+        # tocar no `<html>` antes disso —, então ele corre contra a decisão do
+        # navegador, que é tomada no carregamento. `translate="no"` é a
+        # instrução direta ("não traduza isto"), e ela vale mesmo chegando
+        # atrasada.
+        "raiz.setAttribute('translate', 'no');"
+        "</script>",
+        # ⚠️ 1 e não 0: diferente do `components.v1.html` que ele substitui, o
+        # `st.iframe` **recusa** altura zero ("Height must be either a positive
+        # integer, 'stretch', or 'content'"). Um pixel é invisível na prática, e
+        # foi o teste do app que pegou a diferença — a troca parecia trivial.
+        height=1,
     )
 
 

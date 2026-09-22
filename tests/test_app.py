@@ -192,6 +192,16 @@ def test_o_app_declara_que_a_pagina_esta_em_portugues() -> None:
 
     fonte = inspect.getsource(streamlit_app.declarar_idioma)
     assert "pt-BR" in fonte
+    # ⚠️ O segundo sinal. O `lang` só e definido DEPOIS da renderizacao (o
+    # Streamlit nao deixa tocar no <html> antes), entao ele corre contra a
+    # decisao do navegador, tomada no carregamento. `translate="no"` e a
+    # instrucao direta e vale mesmo chegando atrasada.
+    assert "translate" in fonte
+
+    # ⚠️ E este teste NAO prova que o navegador obedeceu. Ele prova que o
+    # codigo pede. Conferir que a pagina saiu em portugues exige abrir o
+    # navegador -- e foi assim que o defeito original apareceu, com os 609
+    # testes passando e os avisos adulterados na tela.
 
 
 def test_o_exagero_da_multipla_cresce_com_o_tamanho() -> None:
