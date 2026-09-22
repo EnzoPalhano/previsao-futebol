@@ -109,10 +109,41 @@ Precisa de duas, e as duas têm plano gratuito.
 1. vá em **dashboard.api-football.com** e crie uma conta (não pede cartão);
 2. no painel, copie a sua **API key**.
 
-⚠️ **O plano gratuito dá 100 chamadas por dia.** A cota zera à meia-noite (no
-horário de Londres em janeiro, uma hora antes no horário de verão) e o que
-sobra **não acumula**. O projeto conta as chamadas e **para** antes de estourar —
-estourar de graça derruba a sua conta pelo resto do dia.
+⚠️ **O plano gratuito dá 100 chamadas por dia.** A cota zera à meia-noite UTC e
+o que sobra **não acumula**. O projeto conta as chamadas e **para** antes de
+estourar — estourar de graça derruba a sua conta pelo resto do dia.
+
+### ⚠️⚠️ E aqui vem a limitação que muda o que esta fase consegue fazer
+
+Isto foi **medido** contra a API, não lido na documentação:
+
+```
+PLANO: Free
+/injuries season=2026 -> 'Free plans do not have access to this season,
+                          try from 2022 to 2024.'
+/injuries season=2023 -> 3.853 registros de lesão
+```
+
+**O plano gratuito só cobre as temporadas 2022, 2023 e 2024.** A temporada
+corrente é paga. E há uma segunda restrição que se contradiz com a primeira: o
+parâmetro `date` só aceita hoje ±1 dia.
+
+Traduzindo: **no plano gratuito não há como buscar as lesões de hoje.** Você tem
+três saídas legítimas:
+
+| Saída | O que dá | O que não dá |
+|---|---|---|
+| `--falso` | ver o pipeline rodando | dado nenhum é real |
+| **`--historico 2023`** | **lesões reais, código real** | não é medição (ver abaixo) |
+| assinar plano pago | operar a fase de verdade | custa dinheiro |
+
+⚠️ **Por que `--historico` é demonstração e nunca medição.** Ele usa lesões reais
+de uma temporada passada — mas para avaliar se o ajuste ajuda, seria preciso
+saber **quando cada lesão virou pública**, e a API não diz isso. Uma lesão
+registrada no jogo de agosto pode ter sido noticiada três dias antes ou três
+semanas. É a mesma razão pela qual esta fase não tem backtest (seção 7). Por
+isso o modo histórico escreve no **caderno de demonstração**, nunca no de
+evidência.
 
 ### 3.2 API da Anthropic (ler as notícias)
 
@@ -145,7 +176,8 @@ horas — há robôs que varrem o GitHub procurando exatamente isso.
 ## 4. Rodar de verdade
 
 ```powershell
-python scripts\desfalques.py
+python scripts\desfalques.py                 # temporada atual (exige plano pago)
+python scripts\desfalques.py --historico 2023  # lesoes reais, plano gratuito
 ```
 
 O pipeline faz, nesta ordem:
@@ -332,7 +364,9 @@ pip install -e ".[dev]"
       ainda" (com o caderno vazio)
 - [ ] `data\noticias\` existe e **não** aparece no `git status`
 - [ ] o `.env` **não** aparece no `git status`
-- [ ] `pytest` mostra **687 passed** (ou 686 + 1 skipped, se a sua rede
+- [ ] `python scripts\desfalques.py --historico 2023` acha desfalques reais e
+      move alguma previsão
+- [ ] `pytest` mostra **691 passed** (ou 690 + 1 skipped, se a sua rede
       bloquear o site da fonte)
 - [ ] `ruff check .` mostra **All checks passed!**
 - [ ] `git tag` mostra `fase-10`
@@ -350,6 +384,7 @@ pip install -e ".[dev]"
 | `src/futebol/noticias/extracao.py` | O LLM que lê notícia e devolve JSON |
 | `src/futebol/noticias/jogos_alvo.py` | Os próximos jogos — o filtro que vem antes |
 | `src/futebol/noticias/registro.py` | O caderno do paper trading |
+| `src/futebol/segredos.py` | Carrega o `.env` para dentro do ambiente |
 | `src/futebol/app/paginas/desfalques.py` | A oitava tela |
 | `scripts/desfalques.py` | O comando que roda tudo |
 
@@ -383,7 +418,7 @@ Se isso parece um anticlímax, vale olhar de novo para o que foi construído:
   ser escolhida depois de ver o resultado;
 - uma régua ("apostar em tudo") que impede um resultado ruim de parecer bom;
 - intervalos de confiança em cada número, e o menor efeito detectável ao lado;
-- **687 testes**, e vários deles existem só para guardar erros que já
+- **691 testes**, e vários deles existem só para guardar erros que já
   aconteceram uma vez;
 - um app que dá o resultado ruim na primeira tela.
 
