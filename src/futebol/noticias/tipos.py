@@ -49,6 +49,10 @@ class Jogador:
     time: str
     setor: str = "ambos"
     peso: float = 0.0
+    #: O ``id`` do jogador na API, quando ele veio de lá. É por ele que as
+    #: estatísticas são buscadas — nome de jogador é ambíguo entre fontes, e
+    #: buscar por nome traria as estatísticas de outra pessoa sem avisar.
+    identificador: int | None = None
 
     def __post_init__(self) -> None:
         if self.setor not in SETORES:
@@ -78,6 +82,16 @@ class Desfalque:
     confianca: float = 1.0
     fonte: str = ""
     data: date | None = None
+    #: A competição em que o desfalque foi encontrado, no código do projeto.
+    #: Serve para filtrar as estatísticas do jogador: somar os minutos de todas
+    #: as competições e dividir pelos jogos de uma faria quem joga copa saturar
+    #: no teto.
+    liga: str = ""
+    #: A temporada no vocabulário da API (o ano em que ela começou), quando
+    #: conhecida. Guardada aqui porque é ela que a busca de estatísticas do
+    #: jogador precisa, e deduzi-la da data levaria ao erro que
+    #: :attr:`JogoAlvo.temporada_da_api` documenta.
+    temporada_api: int | None = None
 
     def __post_init__(self) -> None:
         if self.status not in STATUS:
@@ -105,10 +119,41 @@ class JogoAlvo:
     mandante: str
     visitante: str
     data: date
+    #: A temporada como a tabela do projeto a escreve (``2023/24`` ou ``2023``).
+    #: Opcional: os próximos jogos vêm de um arquivo que não diz a temporada.
+    temporada: str = ""
 
     @property
     def times(self) -> tuple[str, str]:
         return (self.mandante, self.visitante)
+
+    @property
+    def temporada_da_api(self) -> int:
+        """O ano que a API-Football usa para identificar a temporada.
+
+        ⚠️ **Não é ``self.data.year``, e essa confusão já custou uma execução.**
+        A API identifica a temporada pelo ano em que ela **começou**: a
+        Premier League 2023/24 é ``season=2023``, inclusive para um jogo de
+        **junho de 2024**. Mandando 2024, a API responde com sucesso e zero
+        resultados — e o pipeline conclui "nenhum desfalque" em vez de "pedi a
+        temporada errada".
+
+        É a terceira encarnação da mesma armadilha no projeto: temporada e
+        intervalo de datas não são a mesma coisa (ver as anotações das Fases 9 e
+        10 no CLAUDE.md).
+
+        Quando :attr:`temporada` é conhecida, a conta é exata. Quando não é —
+        caso dos próximos jogos, que vêm de um arquivo sem essa coluna —, cai
+        numa **heurística**: julho em diante pertence à temporada que começa no
+        próprio ano; antes disso, à que começou no ano anterior. Ela acerta as
+        ligas europeias e **erra as de ano civil** (Brasil, EUA, Noruega,
+        Japão), que por regra 12 não entram nesta fase de todo jeito.
+        """
+        if self.temporada:
+            from futebol.dados import limpeza
+
+            return limpeza.ano_inicial(self.temporada)
+        return self.data.year if self.data.month >= 7 else self.data.year - 1
 
     def __str__(self) -> str:
         return f"{self.mandante} × {self.visitante} ({self.liga}, {self.data})"

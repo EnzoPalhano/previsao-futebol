@@ -101,8 +101,32 @@ def test_o_goleiro_nao_e_punido_por_nao_fazer_gol() -> None:
                  jogos_do_time=38, gols_do_time=70)
     goleiro = importancia.peso(importancia.Estatisticas(**stats, posicao="goalkeeper"))
     atacante = importancia.peso(importancia.Estatisticas(**stats, posicao="attacker"))
-    assert goleiro == pytest.approx(1.0)
+
+    # Um titular absoluto vale 1/11 do time: ele é um dos onze em campo, não
+    # metade do elenco. Ver `importancia.JOGADORES_EM_CAMPO`.
+    assert goleiro == pytest.approx(1 / importancia.JOGADORES_EM_CAMPO)
     assert goleiro > atacante
+
+
+def test_titular_absoluto_vale_um_onze_do_time() -> None:
+    """⚠️ A escala do peso, e ela já esteve errada por um fator de 11.
+
+    "Jogou 76% dos minutos disponíveis" e "é 76% do time" são afirmações
+    diferentes. Com a escala errada, um volante titular saía com peso 0,53 —
+    meio time —, os dois lados batiam no teto de 0,25 e ficavam idênticos; e
+    como o modelo só enxerga ``ataque_casa − defesa_fora``, dois ajustes iguais
+    **se cancelam**. A previsão saía inalterada e parecia que o ajuste estava
+    desligado. Estava saturado.
+    """
+    titular = importancia.Estatisticas(
+        minutos=38 * 90, gols=0, assistencias=0, titular=38,
+        jogos_do_time=38, gols_do_time=70, posicao="defender",
+    )
+    assert importancia.peso(titular) == pytest.approx(1 / 11)
+
+    # E o teto do config volta a significar "perdi vários titulares", em vez de
+    # ser atingido com dois desfalques.
+    assert importancia.peso(titular) * 3 < 0.28
 
 
 def test_sem_dados_o_peso_e_zero() -> None:
@@ -675,6 +699,58 @@ def test_a_lista_de_times_alvo_nao_repete(cfg) -> None:
 
     achados = jogos_alvo.ler(CSV_FIXTURES, cfg, hoje=date(2026, 9, 24), dias=7)
     assert len(jogos_alvo.times(achados)) == 4
+
+
+def test_o_bom_do_arquivo_nao_derruba_a_leitura(cfg) -> None:
+    r"""⚠️ Isto custou uma execução inteira do pipeline, em silêncio.
+
+    O `fixtures.csv` do football-data vem com BOM UTF-8. Sem tirá-lo, a
+    primeira chave que o ``csv.DictReader`` monta é ``'﻿Div'``, então
+    ``linha.get("Div")`` devolve ``None``, a liga vira string vazia e **todas**
+    as linhas caem no filtro. O script anunciava "nenhum jogo nas ligas
+    aprovadas" com 198 jogos dentro do arquivo.
+
+    O projeto já sabia do BOM — ``limpeza.ler_bruto`` lê com ``utf-8-sig`` por
+    causa dele, e o CLAUDE.md registra que só deve existir **um** leitor de CSV.
+    Este módulo escreveu um segundo, e o segundo tropeçou na mesma pedra.
+    """
+    from futebol.noticias import jogos_alvo
+
+    com_bom = "﻿" + CSV_FIXTURES
+    sem_bom = jogos_alvo.ler(CSV_FIXTURES, cfg, hoje=date(2026, 9, 24), dias=7)
+    apesar_do_bom = jogos_alvo.ler(com_bom, cfg, hoje=date(2026, 9, 24), dias=7)
+
+    assert len(sem_bom) == 2, "o CSV de teste mudou"
+    assert apesar_do_bom == sem_bom, "o BOM derrubou a leitura"
+
+
+def test_arquivo_vazio_nao_e_confundido_com_ausencia_de_jogos(cfg) -> None:
+    """⚠️ Motivo errado manda procurar no lugar errado.
+
+    "Nenhum jogo" pode ser: o download falhou, as ligas não são as aprovadas,
+    ou as datas não caem na janela — e as três pedem providências diferentes.
+    Dizer sempre a segunda é dizer algo que pode ser falso.
+    """
+    from futebol.noticias import jogos_alvo
+
+    vazio = jogos_alvo.ler_detalhado("", cfg, hoje=date(2026, 9, 24), dias=7)
+    assert vazio.jogos == []
+    assert vazio.linhas_lidas == 0
+    assert "vazio ou ilegível" in vazio.por_que_vazio(date(2026, 9, 24), 7)
+
+
+def test_janela_fora_do_arquivo_diz_o_intervalo_que_existe(cfg) -> None:
+    """O caso que apareceu de verdade: o arquivo só tinha jogos já passados."""
+    from futebol.noticias import jogos_alvo
+
+    # O arquivo cobre de 25/09 a 30/12; hoje é 31/12, depois do último jogo.
+    leitura = jogos_alvo.ler_detalhado(
+        CSV_FIXTURES, cfg, hoje=date(2026, 12, 31), dias=7
+    )
+    assert leitura.jogos == []
+    explicacao = leitura.por_que_vazio(date(2026, 12, 31), 7)
+    assert "25/09/2026" in explicacao and "30/12/2026" in explicacao
+    assert "fora da janela" in explicacao
 
 
 # ----------------------------------------------------------------------------

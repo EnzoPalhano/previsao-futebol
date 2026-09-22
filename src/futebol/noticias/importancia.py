@@ -61,6 +61,26 @@ POSICOES: dict[str, str] = {
 #: ele espalha o efeito em vez de concentrá-lo no lado errado.
 SETOR_PADRAO = "ambos"
 
+#: Quantos jogadores um time põe em campo.
+#:
+#: ⚠️ **Sem dividir por isto, o peso mede a coisa errada, e o erro é grande.**
+#: "Jogou 76% dos minutos disponíveis" e "é 76% do time" são afirmações
+#: completamente diferentes: um titular absoluto é ``1/11`` do time em campo,
+#: não a metade dele.
+#:
+#: O primeiro teste com dados reais deixou isso na cara. De Roon saiu com peso
+#: **0,531** — o que significaria que perder um volante equivale a perder
+#: metade do Atalanta. Com dois desfalques por time, os dois batiam no teto de
+#: 0,25 e ficavam **idênticos**; e como o modelo só enxerga
+#: ``ataque_casa − defesa_fora``, dois ajustes iguais **se cancelam
+#: exatamente**. A previsão saía 50,1% → 50,1% e parecia que o ajuste não
+#: estava ligado. Estava — e estava saturado.
+#:
+#: Dividindo, um titular absoluto vale ~0,09, perder um titular derruba o
+#: ataque para ``exp(−0,09)`` = 91% do que era, e o teto de 0,25 volta a
+#: significar "perdi uns três titulares" em vez de ser atingido sempre.
+JOGADORES_EM_CAMPO = 11
+
 
 @dataclass(frozen=True)
 class Estatisticas:
@@ -116,20 +136,72 @@ def peso(stats: Estatisticas) -> float:
     if stats.jogos_do_time <= 0:
         return 0.0
 
+    # Os dois primeiros são **frações do time**, não do próprio jogador: o
+    # denominador conta os 11 em campo. Ver `JOGADORES_EM_CAMPO`.
     componentes = [
-        _fracao(stats.minutos, stats.jogos_do_time * 90),
-        _fracao(stats.titular, stats.jogos_do_time),
+        _fracao(stats.minutos, stats.jogos_do_time * 90 * JOGADORES_EM_CAMPO),
+        _fracao(stats.titular, stats.jogos_do_time * JOGADORES_EM_CAMPO),
     ]
-    if setor(stats.posicao) in ("ataque", "ambos"):
+    # ⚠️ A participação em gols entra só quando dá para calculá-la: para quem
+    # ataca **e** com os gols do time conhecidos. Incluí-la com
+    # ``gols_do_time == 0`` daria fração zero, e zero aqui seria lido como "ele
+    # não participa de gol nenhum" quando o certo é "não sei quantos gols o
+    # time fez" — uma componente desconhecida puxaria o peso do artilheiro
+    # para baixo em vez de ficar de fora.
+    if setor(stats.posicao) in ("ataque", "ambos") and stats.gols_do_time > 0:
         componentes.append(
             _fracao(stats.gols + stats.assistencias, stats.gols_do_time)
         )
     return sum(componentes) / len(componentes)
 
 
-def montar_jogador(nome: str, time: str, stats: Estatisticas) -> Jogador:
+def montar_jogador(
+    nome: str, time: str, stats: Estatisticas, identificador: int | None = None
+) -> Jogador:
     """Um :class:`Jogador` com peso e setor já calculados."""
-    return Jogador(nome=nome, time=time, setor=setor(stats.posicao), peso=peso(stats))
+    return Jogador(
+        nome=nome,
+        time=time,
+        setor=setor(stats.posicao),
+        peso=peso(stats),
+        identificador=identificador,
+    )
+
+
+def contexto_dos_times(jogos, temporada: str | None = None) -> dict[str, tuple[int, int]]:
+    """``{time: (jogos do time, gols do time)}``, da tabela do projeto.
+
+    ⚠️ **Estes dois números NÃO vêm da API, e isso é de propósito.** O
+    ``/players`` devolve as estatísticas *do jogador* e nada do time; para ter
+    os totais do time seria mais uma chamada por time, dentro de uma cota de
+    100 por dia. Só que o projeto **já tem** esses números, exatos, na própria
+    tabela de jogos — de graça e sem chamada nenhuma.
+
+    A alternativa que eu quase usei era aproximar ``jogos_do_time`` pelas
+    aparições do próprio jogador. Ela é pior do que parece: um reserva com uma
+    aparição de 90 minutos daria ``minutos / (1 × 90) = 1,0`` e viraria o
+    jogador mais importante do elenco. A aproximação não teria dado erro —
+    teria dado o peso errado.
+
+    Args:
+        jogos: a tabela de jogos do projeto.
+        temporada: se dada, conta só essa temporada.
+    """
+    tabela = jogos if temporada is None else jogos.loc[
+        jogos["temporada"].astype(str) == str(temporada)
+    ]
+    contexto: dict[str, tuple[int, int]] = {}
+    for coluna, gols in (("mandante", "gols_mandante"), ("visitante", "gols_visitante")):
+        agrupado = tabela.groupby(coluna).agg(
+            partidas=(coluna, "size"), feitos=(gols, "sum")
+        )
+        for time, linha in agrupado.iterrows():
+            partidas, feitos = contexto.get(str(time), (0, 0))
+            contexto[str(time)] = (
+                partidas + int(linha["partidas"]),
+                feitos + int(linha["feitos"]),
+            )
+    return contexto
 
 
 def sem_estatisticas(nome: str, time: str, posicao: str = "") -> Jogador:

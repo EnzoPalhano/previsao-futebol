@@ -24,6 +24,7 @@ from __future__ import annotations
 import csv
 import io
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
 from futebol.config import Config
@@ -51,6 +52,89 @@ def _data(texto: str) -> date | None:
     return None
 
 
+def _sem_bom(texto: str) -> str:
+    r"""Tira o BOM do começo do arquivo.
+
+    ⚠️ **Isto já custou uma execução inteira do pipeline.** O `fixtures.csv` vem
+    com BOM UTF-8, então a primeira chave que o ``csv.DictReader`` monta é
+    ``'﻿Div'`` e não ``'Div'``. ``linha.get("Div")`` devolve ``None``, a
+    liga vira string vazia, e **todas** as linhas caem no filtro — o script
+    anunciava "nenhum jogo nas ligas aprovadas" com 198 jogos no arquivo.
+
+    O projeto já sabia disso: ``limpeza.ler_bruto`` lê com ``utf-8-sig``
+    justamente por causa do BOM, e o CLAUDE.md registra que **só existe um
+    leitor de CSV** no projeto. Este módulo escreveu um segundo, e o segundo
+    tropeçou na mesma pedra. A lição não é "lembre do BOM" — é que um segundo
+    leitor recomeça do zero a lista de chatices que o primeiro já resolveu.
+    """
+    return texto.lstrip("﻿")
+
+
+@dataclass(frozen=True)
+class Leitura:
+    """O que o arquivo de próximos jogos tinha, e o que sobrou do filtro.
+
+    Existe para o script **não confundir motivos**. "Nenhum jogo" pode ser:
+    o arquivo veio vazio, as ligas não são as aprovadas, ou as datas não caem
+    na janela — e as três pedem providências diferentes de quem está lendo.
+    """
+
+    jogos: list[JogoAlvo]
+    linhas_lidas: int
+    ligas_no_arquivo: tuple[str, ...]
+    primeira_data: date | None
+    ultima_data: date | None
+
+    def por_que_vazio(self, hoje: date, dias: int) -> str:
+        """A explicação honesta de por que não sobrou jogo nenhum."""
+        if self.linhas_lidas == 0:
+            return (
+                "O arquivo de próximos jogos veio **vazio ou ilegível**. Isso é "
+                "um problema de download, não ausência de jogos."
+            )
+        if self.primeira_data and self.ultima_data:
+            fora_da_janela = self.ultima_data < hoje or self.primeira_data > (
+                hoje + timedelta(days=dias)
+            )
+            if fora_da_janela:
+                return (
+                    f"O arquivo tem {self.linhas_lidas} jogos, mas todos entre "
+                    f"{self.primeira_data:%d/%m/%Y} e {self.ultima_data:%d/%m/%Y} "
+                    f"— fora da janela de {dias} dias a partir de "
+                    f"{hoje:%d/%m/%Y}. O football-data publica a rodada que vem "
+                    "e atualiza durante a semana; tente de novo mais perto dos "
+                    "jogos."
+                )
+        return (
+            f"O arquivo tem {self.linhas_lidas} jogos, mas nenhum nas 18 ligas "
+            f"aprovadas dentro da janela. Ligas no arquivo: "
+            f"{', '.join(self.ligas_no_arquivo)}."
+        )
+
+
+def ler_detalhado(
+    texto_csv: str,
+    cfg: Config,
+    hoje: date | None = None,
+    dias: int | None = None,
+) -> Leitura:
+    """Como :func:`ler`, mas dizendo também o que foi descartado e por quê."""
+    hoje = hoje or date.today()
+    dias = int(cfg.secao("noticias")["dias_a_frente"]) if dias is None else dias
+
+    linhas = list(csv.DictReader(io.StringIO(_sem_bom(texto_csv))))
+    datas = [d for d in (_data(linha.get("Date") or "") for linha in linhas) if d]
+    ligas = sorted({(linha.get("Div") or "").strip() for linha in linhas} - {""})
+
+    return Leitura(
+        jogos=ler(texto_csv, cfg, hoje=hoje, dias=dias),
+        linhas_lidas=len(linhas),
+        ligas_no_arquivo=tuple(ligas),
+        primeira_data=min(datas) if datas else None,
+        ultima_data=max(datas) if datas else None,
+    )
+
+
 def ler(
     texto_csv: str,
     cfg: Config,
@@ -76,7 +160,7 @@ def ler(
     pais = _mapa_de_pais(cfg)
 
     jogos: list[JogoAlvo] = []
-    for linha in csv.DictReader(io.StringIO(texto_csv)):
+    for linha in csv.DictReader(io.StringIO(_sem_bom(texto_csv))):
         liga = (linha.get("Div") or "").strip()
         if liga not in permitidas:
             continue
@@ -126,7 +210,7 @@ def _mapa_de_pais(cfg: Config) -> dict[str, str]:
     return mapa
 
 
-def baixar(cfg: Config, hoje: date | None = None) -> list[JogoAlvo]:
+def baixar(cfg: Config, hoje: date | None = None) -> Leitura:
     """Lê os próximos jogos do football-data.
 
     ⚠️ O site responde **HTTP 302** e exige ``User-Agent`` — é a mesma
@@ -144,7 +228,12 @@ def baixar(cfg: Config, hoje: date | None = None) -> list[JogoAlvo]:
         allow_redirects=True,
     )
     resposta.raise_for_status()
-    return ler(resposta.text, cfg, hoje=hoje)
+    # `resposta.content` e não `resposta.text`: o requests adivinha o encoding
+    # pelo cabeçalho, e `utf-8-sig` é o único que come o BOM. Decodificar aqui
+    # entrega texto já limpo — e `_sem_bom` continua no parser como segunda
+    # trava, para quem chamar `ler` com texto vindo de outra origem.
+    texto = resposta.content.decode("utf-8-sig", errors="replace")
+    return ler_detalhado(texto, cfg, hoje=hoje)
 
 
 def times(jogos: Iterable[JogoAlvo]) -> set[str]:
